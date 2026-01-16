@@ -24,9 +24,22 @@ services:
     container_name: helmet-frontend
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf:/etc/nginx/ssl/:ro
     depends_on:
       - backend
     restart: always
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: helmet-certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot/:rw
+      - ./certbot/conf:/etc/letsencrypt/:rw
     networks:
       - app-network
 
@@ -45,6 +58,8 @@ services:
 
 volumes:
   postgres_data:
+  certbot-www:
+  certbot-conf:
 
 networks:
   app-network:
