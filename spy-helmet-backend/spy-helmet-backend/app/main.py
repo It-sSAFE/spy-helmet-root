@@ -6,7 +6,7 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
 from app.core.buffer import add_reading
@@ -43,14 +43,18 @@ class ReadingInput(BaseModel):
     co_ppm: float
 
 # ✅ New input schema: Used by ESP32 /submit_reading
+# ✅ New input schema: Used by ESP32 /submit_reading
 class SensorInput(BaseModel):
-    helmet_id: str
-    body_temp: float
-    env_temp: float
-    pressure: float
-    co_ppm: float
-    ch4_ppm: float
-    heart_rate: int
+    helmet_ID: str
+    BodyTemp: float
+    EnvTemp: float
+    Humidity: float
+    CO_ppm: float
+    CH4_ppm: float
+    HR: int
+    SpO2: int
+    Packet_no: int = Field(..., alias="Packet#")
+
 
 @app.get("/")
 def root():
@@ -114,7 +118,8 @@ async def submit_sensor_data(data: SensorInput, request: Request):
     global latest_prediction
     try:
         # Convert to fatigue model input: [HR, TEMP]
-        reading = [data.heart_rate, data.body_temp]
+        # Mapping new keys to model expected input
+        reading = [data.HR, data.BodyTemp]
 
         # Add to buffer
         sequence = add_reading(reading)
@@ -122,25 +127,30 @@ async def submit_sensor_data(data: SensorInput, request: Request):
         if sequence is None:
             return {
                 "status": "collecting",
-                "message": "Waiting for 100 readings from ESP32..."
+                "message": f"Waiting for 100 readings from ESP32... (Packet {data.Packet_no})"
             }
 
         # Predict fatigue level
         result = predict_fatigue(sequence)
 
-        # Log reading with helmet ID
-        log_data(reading, result["prediction"], data.helmet_id)
+        # Log reading with helmet ID (Skipped Writing to DB for now per request)
+        # log_data(reading, result["prediction"], data.helmet_ID) 
 
         # Save for frontend
         latest_prediction = {
             "prediction": result["prediction"],
             "confidence": f"{result['confidence']:.2f}%",
-            "raw_scores": result["raw_scores"],
-            "heart_rate": data.heart_rate,
-            "body_temp": data.body_temp,
-            "ch4_ppm": data.ch4_ppm,
-            "co_ppm": data.co_ppm,
-            "helmet_id": data.helmet_id
+            # "raw_scores": result["raw_scores"],
+             "raw_scores": [float(x) for x in result["raw_scores"]],
+            "heart_rate": data.HR,
+            "body_temp": data.BodyTemp,
+            "ch4_ppm": data.CH4_ppm,
+            "co_ppm": data.CO_ppm,
+            "helmet_id": data.helmet_ID,
+            "humidity": data.Humidity,
+            "spo2": data.SpO2,
+            "env_temp": data.EnvTemp,
+             "packet_no": data.Packet_no
         }
 
         return latest_prediction
