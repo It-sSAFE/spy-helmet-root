@@ -1,0 +1,32 @@
+# 🔧 FastAPI stack
+fastapi
+uvicorn
+
+
+# 📦 Pydantic for validation
+pydantic[email]
+
+
+# 🔐 Authentication & security
+python-multipart
+bcrypt==4.3.0
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]
+
+# 🧠 ML / AI (Keras + TF + preprocessing)
+tensorflow-cpu
+scikit-learn
+pandas
+numpy
+
+# 🛢️ Database (ORM + SQLite)
+sqlalchemy
+psycopg2-binary
+
+# 🌐 CORS
+aiofiles
+requests
+
+# 🛠️ Utilities
+python-dotenv
+
