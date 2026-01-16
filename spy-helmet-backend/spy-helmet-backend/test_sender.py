@@ -4,7 +4,7 @@ import random
 import uuid
 
 # URL for the new endpoint
-API_URL = "http://localhost:8000/predict"
+API_URL = "http://localhost:8000/submit_reading"
 
 # Generate a static UUID for this session so we track one helmet
 HELMET_ID = str(uuid.uuid4())
@@ -38,6 +38,7 @@ def generate_sensor_reading(packet_num):
 
 print(f"🚀 Starting Simulation for Helmet ID: {HELMET_ID}")
 print(f"📡 Sending to: {API_URL}")
+console.log("Sent")
 
 while True:
     packet_counter += 1
@@ -54,6 +55,7 @@ while True:
 
     except Exception as e:
         print(f"❌ Connection Failed: {e}")
+        console.log("failed")
         time.sleep(2) # Wait longer on error
     
     time.sleep(0.5) # 2 Hz frequency
