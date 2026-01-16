@@ -53,7 +53,7 @@ class SensorInput(BaseModel):
     CH4_ppm: float
     HR: int
     SpO2: int
-    Packet_no: int = Field(..., alias="Packet#")
+    Packet_no: int
 
 
 @app.get("/")
@@ -134,7 +134,7 @@ async def submit_sensor_data(data: SensorInput, request: Request):
         result = predict_fatigue(sequence)
 
         # Log reading with helmet ID (Skipped Writing to DB for now per request)
-        # log_data(reading, result["prediction"], data.helmet_ID) 
+        log_data(reading, result["prediction"], data.helmet_ID) 
 
         # Save for frontend
         latest_prediction = {

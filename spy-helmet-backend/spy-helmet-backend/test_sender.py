@@ -3,9 +3,8 @@ import time
 import random
 
 API_URL = "http://localhost:8000/predict"
-
 def generate_normal_reading():
-    hr = random.uniform(150,155)
+    hr = random.uniform(90,95)
     temp = random.uniform(36.0, 37.5)
     
     # Simulated gas readings
