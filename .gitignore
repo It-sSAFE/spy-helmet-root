@@ -67,6 +67,8 @@ yarn-error.log*
 *.swp
 *.swo
 
+
 # Project Specific
 spy-helmet-backend/helmet.db
 .cph/
+certbot/
