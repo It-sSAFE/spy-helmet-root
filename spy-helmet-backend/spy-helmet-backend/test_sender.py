@@ -4,7 +4,7 @@ import random
 import uuid
 
 # URL for the new endpoint
-API_URL = "http://localhost:8000/submit_reading"
+API_URL = "http://localhost:8000/predict"
 
 # Generate a static UUID for this session so we track one helmet
 HELMET_ID = str(uuid.uuid4())
