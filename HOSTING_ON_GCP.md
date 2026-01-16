@@ -81,101 +81,49 @@ newgrp docker
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/spy_helmet_root.git
+git clone https://github.com/It-sSAFE/spy-helmet-root.git
 cd spy_helmet_root
 ```
-*Note: If it's a private repo, you will need to use a Personal Access Token (PAT) or set up SSH keys.*
 
 ### 2. Configure Environment Variables
 Create the production `.env` file.
 ```bash
 nano .env
 ```
-Paste your production configuration (change passwords!):
+Paste your production configuration:
 ```env
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=secure_gcp_password
+POSTGRES_PASSWORD=your_secure_password
 POSTGRES_DB=helmetDB
-DATABASE_URL=postgresql://postgres:secure_gcp_password@db:5432/helmetDB
 ```
 Save: `Ctrl+O`, `Enter`, `Ctrl+X`.
 
-### 3. Update Frontend API URL
-Because we are building the image, the frontend needs to know where the backend lives.
-Create the frontend-specific env file:
-```bash
-nano spy-helmet-frontend/spy-helmet-frontend/.env
-```
-Add:
-```env
-# If using Firewall Option A (Direct Ports):
-VITE_API_BASE_URL=http://YOUR_VM_EXTERNAL_IP:8000
+### 3. Build and Run Containerized App
+We have prepared a production-ready compose file (`docker-compose.prod.yaml`) that:
+1.  Builds the React Frontend into static files.
+2.  Sets up an Nginx container to serve the site and proxy API requests.
+3.  Starts the Backend and Database.
 
-# If using Firewall Option B (Nginx/Port 80):
-# VITE_API_BASE_URL=http://YOUR_VM_EXTERNAL_IP/api
-```
-*(Get `YOUR_VM_EXTERNAL_IP` from the GCP Console VM list).*
-
-### 4. Build and Run
+Run this command:
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.prod.yaml up -d --build
 ```
-*This might take up to 5-10 minutes depending on the machine size.*
+*This might take 5-10 minutes initially as it compiles the frontend and installs dependencies.*
 
 ---
 
-## 🔒 Step 6: Set up Nginx (Recommended)
+## 🔒 Step 6: Verify Deployment
 
-Instead of asking users to type `:5173` or `:8000`, use Nginx to serve everything on standard port 80.
+Your application should now be accessible on Port 80.
 
-1.  **Install Nginx**:
-    ```bash
-    sudo apt install nginx -y
-    ```
+1.  Open your browser and visit: `http://YOUR_VM_EXTERNAL_IP`
+2.  You should see the React Login/Dashboard page.
+3.  The frontend is automatically configured to talk to the backend via `/api`.
 
-2.  **Create Configuration**:
-    ```bash
-    sudo nano /etc/nginx/sites-available/spyhelmet
-    ```
-
-3.  **Paste Configuration**:
-    Replace `your_server_ip` with your actual External IP.
-    ```nginx
-    server {
-        listen 80;
-        server_name your_server_ip;
-
-        # Frontend
-        location / {
-            proxy_pass http://localhost:5173;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-        }
-
-        # Backend
-        location /api/ {
-            rewrite ^/api/(.*) /$1 break;
-            proxy_pass http://localhost:8000;
-            proxy_set_header Host $host;
-        }
-        
-        # Direct Endpoint Mapping (Optional fallback)
-        location /live_predict {
-            proxy_pass http://localhost:8000;
-        }
-    }
-    ```
-
-4.  **Activate**:
-    ```bash
-    sudo ln -s /etc/nginx/sites-available/spyhelmet /etc/nginx/sites-enabled/
-    sudo rm /etc/nginx/sites-enabled/default
-    sudo systemctl restart nginx
-    ```
-
-Now check `http://YOUR_VM_EXTERNAL_IP` in your browser!
+**Troubleshooting:**
+*   **Logs**: Check logs with `docker compose -f docker-compose.prod.yaml logs -f`.
+*   **Database**: Ensure the `postgres_data` volume is created (it handles persistence automatically).
+*   **Firewall**: Ensure your GCP Firewall allows TCP traffic on port **80**. If you can't access it, check "VPC Network > Firewall" and allow "http-server" tag or port 80 manually.
 
 ---
 

@@ -1,0 +1,51 @@
+services:
+  backend:
+    build:
+      context: ./spy-helmet-backend/spy-helmet-backend
+      dockerfile: Dockerfile
+    container_name: helmet-backend
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRES_HOST=db
+    depends_on:
+      - db
+    restart: always
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./spy-helmet-frontend/spy-helmet-frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_BASE_URL=/api
+    container_name: helmet-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15
+    container_name: helmet-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
