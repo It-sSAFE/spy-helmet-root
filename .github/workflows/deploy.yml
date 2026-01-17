@@ -9,34 +9,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: 22
           script: |
-            # Navigate to the project directory
-            # We try both underscore and dash versions just in case
-            cd spy_helmet_root || cd spy-helmet-root || { echo "Directory not found"; exit 1; }
+            # 1. Navigate to the folder (Adjust if you cloned it elsewhere)
+            cd ~/spy_helmet_root || { echo "❌ Directory ~/spy_helmet_root not found!"; exit 1; }
             
-            echo "--------- PULLING LATEST CODE ---------"
+            echo "🚀 PULLING LATEST CODE..."
+            # Reset to ensure valid state, then pull
             git reset --hard
             git pull origin main
             
-            echo "--------- REBUILDING SERVICES ---------"
-            chmod +x setup_ssl.sh
+            echo "🛠️ REBUILDING CONTAINERS..."
             
-            # Detect docker compose version
-            if command -v docker-compose &> /dev/null; then
-                COMPOSE="docker-compose"
-            else
-                COMPOSE="docker compose"
-            fi
+            # 2. Rebuild using production compose file
+            # We use 'docker compose' (v2) which is standard now
+            sudo docker compose -f docker-compose.prod.yaml down
+            sudo docker compose -f docker-compose.prod.yaml up -d --build
             
-            # Restart services
-            sudo $COMPOSE -f docker-compose.prod.yaml down
-            sudo $COMPOSE -f docker-compose.prod.yaml up -d --build
+            echo "🧹 CLEANING UP..."
+            sudo docker image prune -f
             
-            echo "--------- CLEANING UP ---------"
-            # Clean up unused images to save disk space
-            sudo docker system prune -f
+            echo "✅ DEPLOYMENT SUCCESSFUL!"

@@ -7,7 +7,7 @@ import os
 
 # Use 127.0.0.1 to avoid IPv6 resolution issues in some containers
 # Inside the container, this points to the FastAPI app running on port 8000
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/submit_reading")
 
 
 

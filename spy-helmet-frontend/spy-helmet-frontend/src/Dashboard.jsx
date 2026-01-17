@@ -53,6 +53,16 @@ export default function Dashboard() {
         if (data.status === "collecting") {
           setLoading(true);
           setrprogress(data.reading_progress);
+
+          // Still update packet number if available so we know we are connected!
+          const newPacketNo = data.packet_no || "--";
+          if (newPacketNo !== packetNo) {
+            setLastPacketTime(Date.now());
+            setIsDataStale(false);
+            setBlink(true);
+            setTimeout(() => setBlink(false), 200);
+            setPacketNo(newPacketNo);
+          }
           return;
         }
 
