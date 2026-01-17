@@ -10,9 +10,19 @@ import os
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/submit_reading")
 
 
-# ⚠️ Using the Valid Helmet ID from seed_test_data.py
-# If this doesn't exist, run `python seed_test_data.py`
-HELMET_ID = "a34ef6a1-b853-4da4-a004-5cdf7dfcb1eb"
+
+try:
+    from seed_test_data import create_test_data
+    # Dynamically get ID (creates it if missing)
+    HELMET_ID = create_test_data()
+    print(f"✅ Loaded Helmet ID: {HELMET_ID}")
+except ImportError:
+    print("⚠️ seed_test_data.py not found. Using fallback ID.")
+    HELMET_ID = "a34ef6a1-b853-4da4-a004-5cdf7dfcb1eb"
+except Exception as e:
+    print(f"⚠️ Error fetching Helmet ID: {e}")
+    HELMET_ID = str(uuid.uuid4())
+
 
 packet_counter = 0
 
