@@ -364,86 +364,87 @@ export default function Dashboard() {
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
 
             {/* Header */}
-            <div className="sticky top-0 bg-gray-900 border-b border-cyan-800 p-6 flex justify-between items-center z-10 shadow-md">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3 tracking-wide">
-                <span className="text-cyan-400 text-3xl">📊</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
-                  WEEKLY AI MANAGER REPORT
-                </span>
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 flex justify-between items-center z-10">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <span className="text-cyan-400">📊</span> Weekly Manager Report
               </h2>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="text-gray-500 hover:text-cyan-400 transition-colors text-4xl leading-none"
+                className="text-gray-400 hover:text-white transition-colors text-3xl leading-none"
               >
                 &times;
               </button>
             </div>
 
             {/* Body */}
-            <div className="p-8 space-y-8 bg-black/60">
+            <div className="p-8 space-y-8 bg-gray-900">
 
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Risk Level Card - Dynamic Color but consistent shape */}
-                <div className={`p-5 rounded-xl border shadow-lg ${weeklyReport.risk_level === 'HIGH'
-                    ? 'bg-gray-900 border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]'
+
+                {/* Risk Level */}
+                <div className={`p-4 rounded-xl border shadow-sm ${weeklyReport.risk_level === 'HIGH'
+                    ? 'bg-gray-800 border-red-600'
                     : weeklyReport.risk_level === 'MODERATE'
-                      ? 'bg-gray-900 border-yellow-600 shadow-[0_0_15px_rgba(202,138,4,0.3)]'
-                      : 'bg-gray-900 border-green-600 shadow-[0_0_15px_rgba(22,163,74,0.3)]'
+                      ? 'bg-gray-800 border-yellow-600'
+                      : 'bg-gray-800 border-green-600'
                   }`}>
-                  <p className="text-gray-400 text-sm mb-2 uppercase tracking-widest font-semibold">Fatigue Risk Level</p>
-                  <p className={`text-4xl font-extrabold ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500 animate-pulse' : weeklyReport.risk_level === 'MODERATE' ? 'text-yellow-400' : 'text-green-400'
+                  <p className="text-gray-400 text-sm mb-1">Risk Level</p>
+                  <p className={`text-3xl font-bold ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' : weeklyReport.risk_level === 'MODERATE' ? 'text-yellow-400' : 'text-green-400'
                     }`}>
                     {weeklyReport.risk_level}
                   </p>
                 </div>
 
-                {/* Prediction Card - Cyan Theme */}
-                <div className="p-5 rounded-xl border border-cyan-700 bg-gray-900 shadow-[0_0_15px_rgba(8,145,178,0.2)]">
-                  <p className="text-gray-400 text-sm mb-2 uppercase tracking-widest font-semibold">Predicted Day 8 Fatigue</p>
-                  <p className="text-4xl font-extrabold text-cyan-300">
-                    {weeklyReport.predicted_fatigue_day8} <span className="text-xl text-gray-500 font-normal">min</span>
+                {/* Prediction */}
+                <div className="bg-gray-800 border border-cyan-700 p-4 rounded-xl shadow-sm">
+                  <p className="text-gray-400 text-sm mb-1">Predicted Fatigue (Day 8)</p>
+                  <p className="text-3xl font-bold text-cyan-300">
+                    {weeklyReport.predicted_fatigue_day8} <span className="text-lg text-gray-500 font-normal">min</span>
                   </p>
                 </div>
 
-                {/* Recommendation Card - Purple Theme */}
-                <div className="p-5 rounded-xl border border-purple-700 bg-gray-900 shadow-[0_0_15px_rgba(147,51,234,0.2)]">
-                  <p className="text-gray-400 text-sm mb-2 uppercase tracking-widest font-semibold">Recommended Shift</p>
-                  <p className="text-2xl font-bold text-purple-400 mt-1">
+                {/* Shift */}
+                <div className="bg-gray-800 border border-purple-700 p-4 rounded-xl shadow-sm">
+                  <p className="text-gray-400 text-sm mb-1">Recommended Shift</p>
+                  <p className="text-xl font-bold text-purple-400 mt-2">
                     {weeklyReport.recommended_shift}
                   </p>
                 </div>
               </div>
 
-              {/* Bulsy Details */}
+              {/* Detailed Report Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
                 {/* Text Report */}
-                <div className="bg-gray-900 border border-gray-700 p-6 rounded-xl shadow-inner font-mono text-sm text-cyan-100 leading-relaxed whitespace-pre-wrap h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-                  {weeklyReport.weekly_report}
+                <div className="bg-black/20 border border-gray-700 p-6 rounded-xl overflow-y-auto h-96">
+                  <pre className="whitespace-pre-wrap font-mono text-sm text-gray-300 leading-relaxed font-normal">
+                    {weeklyReport.weekly_report}
+                  </pre>
                 </div>
 
                 {/* Recommendations */}
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-cyan-400 border-b border-gray-800 pb-3 flex items-center gap-2">
-                    <span role="img" aria-label="clock">⏰</span> Optimized Break Schedule
+                  <h3 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
+                    Suggested Break Schedule
                   </h3>
                   <div className="space-y-3">
                     {weeklyReport.recommended_breaks.map((b, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-cyan-500 hover:shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all group">
-                        <span className="font-mono text-lg text-gray-200 group-hover:text-white transition-colors">{b.start} – {b.end}</span>
-                        <span className="bg-gray-900 border border-cyan-900 text-cyan-300 px-4 py-1 rounded-full text-xs font-bold shadow-sm">
-                          {b.duration_min} MIN
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-600">
+                        <span className="text-gray-200 font-medium">{b.start} – {b.end}</span>
+                        <span className="bg-gray-700 text-gray-200 px-3 py-1 rounded text-sm">
+                          {b.duration_min} min
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-6 p-5 bg-gray-800/50 border border-yellow-700/50 rounded-xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-yellow-600"></div>
-                    <p className="text-gray-300 text-sm flex gap-3 items-start">
-                      <span className="text-2xl mt-1">💡</span>
-                      <span className="italic opacity-90">
-                        <strong>AI Manager Note: </strong>This schedule is optimized to reduce cumulative fatigue by ~35% based on the worker's recent physiological trends. Consider strictly enforcing the 2nd break.
+                  {/* Note Box */}
+                  <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-600">
+                    <p className="text-gray-300 text-sm flex gap-2">
+                      <span className="text-yellow-500">💡</span>
+                      <span>
+                        <strong>Note:</strong> This schedule is optimized to reduce cumulative fatigue by ~35% based on the worker's recent physiological trends.
                       </span>
                     </p>
                   </div>
@@ -453,18 +454,18 @@ export default function Dashboard() {
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-cyan-900 bg-gray-900 flex justify-end items-center gap-4">
+            <div className="p-6 border-t border-gray-700 bg-gray-900 flex justify-end gap-3">
               <button
                 onClick={() => window.print()}
-                className="px-6 py-2 bg-black border border-gray-600 hover:border-white text-gray-300 hover:text-white rounded-lg transition-all font-semibold uppercase tracking-wider text-sm"
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white rounded transition-colors"
               >
-                Print PDF
+                Print
               </button>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="px-8 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all uppercase tracking-wider text-sm"
+                className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded transition-colors"
               >
-                Close Report
+                Close
               </button>
             </div>
 
