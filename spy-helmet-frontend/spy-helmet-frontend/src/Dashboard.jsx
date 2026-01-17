@@ -372,153 +372,159 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* 📋 Report Modal / Industrial Terminal */}
+      {/* 📋 Modern Corporate Report Modal */}
       {showReportModal && weeklyReport && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 font-mono">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 font-sans">
 
-          {/* Main Terminal Chassis */}
-          <div className="bg-zinc-900 border-4 border-yellow-600 w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-[0_0_50px_rgba(234,179,8,0.2)] relative flex flex-col">
+          {/* Main Card */}
+          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-2xl flex flex-col animate-fade-in-up">
 
-            {/* 🚧 Hazard Header */}
-            <div
-              className="sticky top-0 z-10 flex justify-between items-center border-b-4 border-yellow-600 bg-yellow-500 px-6 py-4"
-              style={{
-                backgroundImage: "repeating-linear-gradient(45deg, #eab308, #eab308 10px, #ca8a04 10px, #ca8a04 20px)"
-              }}
-            >
-              <div className="bg-black px-4 py-2 border-2 border-white/20 shadow-lg">
-                <h2 className="text-2xl font-black text-yellow-500 tracking-widest uppercase flex items-center gap-3">
-                  <span className="animate-pulse text-red-500">●</span>
-                  Operator Safety Log
+            {/* Header */}
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white/90 backdrop-blur-md px-8 py-6 rounded-t-2xl">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
+                  <span className="text-blue-600">📊</span>
+                  Weekly Manager Insight
                 </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  AI-driven analysis of workforce fatigue patterns
+                </p>
               </div>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="bg-black hover:bg-red-600 text-white font-bold px-6 py-2 border-2 border-white/20 uppercase tracking-wider transition-colors"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 p-2 rounded-full transition-colors"
               >
-                [ Close Terminal ]
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
             {/* Body Content */}
-            <div className="p-8 space-y-8 bg-zinc-900 text-zinc-300">
+            <div className="p-8 space-y-8 bg-gray-50">
 
               {/* Timestamp & ID Block */}
-              <div className="flex justify-between border-b border-zinc-700 pb-2 text-xs text-zinc-500 uppercase tracking-widest">
-                <span>Unit ID: MN-4092-X</span>
-                <span>Logged: {new Date().toISOString().split('T')[0]}</span>
+              <div className="flex justify-between items-center text-sm text-gray-400">
+                <span className="font-medium bg-white px-3 py-1 rounded-full border border-gray-200">ID: MN-4092-X</span>
+                <span>Generated: {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
               </div>
 
-              {/* Key Metrics Grid - Rigid Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-4 border-zinc-700 bg-black">
+              {/* Key Metrics Grid - Apple Style */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 {/* Risk Level */}
-                <div className="p-6 border-b md:border-b-0 md:border-r border-zinc-700 flex flex-col justify-between">
-                  <span className="text-xs font-bold uppercase text-zinc-500 mb-2">Current Risk Assessment</span>
-                  <div className={`text-4xl font-black tracking-tighter px-4 py-2 border-l-4 ${weeklyReport.risk_level === 'HIGH' ? 'border-red-600 text-red-600 bg-red-900/10' :
-                      weeklyReport.risk_level === 'MODERATE' ? 'border-yellow-500 text-yellow-500 bg-yellow-900/10' :
-                        'border-green-500 text-green-500 bg-green-900/10'
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Risk Assessment</span>
+                  <div className={`text-3xl font-bold tracking-tight ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' :
+                    weeklyReport.risk_level === 'MODERATE' ? 'text-yellow-500' :
+                      'text-green-500'
                     }`}>
                     {weeklyReport.risk_level}
                   </div>
+                  <div className="mt-2 text-xs text-gray-400">Current shift evaluation</div>
                 </div>
 
                 {/* Fatigue Prediction */}
-                <div className="p-6 border-b md:border-b-0 md:border-r border-zinc-700 flex flex-col justify-between">
-                  <span className="text-xs font-bold uppercase text-zinc-500 mb-2">Fatigue Load (Prognosis)</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-zinc-100">{weeklyReport.predicted_fatigue_day8}</span>
-                    <span className="text-sm font-bold text-zinc-500 uppercase">Minutes</span>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Predicted Fatigue Load</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-gray-900">{weeklyReport.predicted_fatigue_day8}</span>
+                    <span className="text-sm font-medium text-gray-400">min</span>
                   </div>
                   {/* Visual Bar */}
-                  <div className="w-full bg-zinc-800 h-2 mt-3">
+                  <div className="w-full bg-gray-100 h-1.5 mt-4 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500"
+                      className="h-full bg-blue-500 rounded-full"
                       style={{ width: `${Math.min(100, (weeklyReport.predicted_fatigue_day8 / 100) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
 
                 {/* Recommended Shift */}
-                <div className="p-6 flex flex-col justify-between">
-                  <span className="text-xs font-bold uppercase text-zinc-500 mb-2">Assigned Shift Pattern</span>
-                  <div className="text-2xl font-bold text-white border-2 border-zinc-700 bg-zinc-800 p-2 text-center uppercase">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Suggested Shift</span>
+                  <div className="text-xl font-semibold text-gray-800 bg-blue-50 px-4 py-2 rounded-lg text-center border border-blue-100">
                     {weeklyReport.recommended_shift}
                   </div>
+                  <div className="mt-2 text-xs text-gray-400 text-center">Optimized for recovery</div>
                 </div>
               </div>
 
               {/* Detailed Data Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Raw Log Output */}
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-bold text-yellow-600 uppercase mb-2 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-yellow-600"></span> Analysis Log
+                {/* Report Text */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[500px]">
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-4">
+                    Analysis Summary
                   </h3>
-                  <div className="bg-black border border-zinc-700 p-4 flex-grow font-mono text-xs text-green-500 leading-relaxed overflow-y-auto h-80 shadow-inner">
-                    <span className="text-green-800 block mb-2 opacity-50">{`>>> BEGIN_TRANSMISSION`}</span>
-                    <pre className="whitespace-pre-wrap font-inherit">
+                  <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
+                    <p className="whitespace-pre-wrap text-sm text-gray-600 leading-7 font-normal">
                       {weeklyReport.weekly_report}
-                    </pre>
-                    <span className="text-green-800 block mt-2 opacity-50 animate-pulse">_</span>
+                    </p>
                   </div>
                 </div>
 
                 {/* Shift Schedule Table */}
-                <div>
-                  <h3 className="text-sm font-bold text-yellow-600 uppercase mb-2 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-yellow-600"></span> Mandatory Break Protocol
-                  </h3>
+                <div className="flex flex-col gap-6">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-4">
+                      Protocol: Mandatory Breaks
+                    </h3>
 
-                  <div className="border-2 border-zinc-700 bg-zinc-800">
-                    {/* Table Header */}
-                    <div className="grid grid-cols-3 bg-zinc-700 text-zinc-300 text-xs font-bold uppercase py-2 px-4">
-                      <div className="col-span-2">Time Window</div>
-                      <div className="text-right">Downtime</div>
-                    </div>
-
-                    {/* Rows */}
-                    <div className="divide-y divide-zinc-700">
-                      {weeklyReport.recommended_breaks.map((b, idx) => (
-                        <div key={idx} className="grid grid-cols-3 py-3 px-4 text-sm hover:bg-zinc-700/50 transition-colors">
-                          <div className="col-span-2 text-white font-medium tracking-wide">
-                            {b.start} <span className="text-zinc-500 mx-1">➜</span> {b.end}
-                          </div>
-                          <div className="text-right text-yellow-500 font-bold">
-                            {b.duration_min} MIN
-                          </div>
-                        </div>
-                      ))}
+                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                      <table className="w-full text-sm text-left text-gray-500">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3">Time Window</th>
+                            <th scope="col" className="px-6 py-3 text-right">Duration</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {weeklyReport.recommended_breaks.map((b, idx) => (
+                            <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4 font-medium text-gray-900">
+                                {b.start} <span className="text-gray-400 mx-2">→</span> {b.end}
+                              </td>
+                              <td className="px-6 py-4 text-right text-blue-600 font-semibold">
+                                {b.duration_min} min
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
-                  {/* Warning Box */}
-                  <div className="mt-6 border-l-4 border-yellow-500 bg-yellow-900/20 p-4">
-                    <p className="text-yellow-200 text-xs uppercase tracking-wide font-bold mb-1">
-                      ⚠ Operational Directive
-                    </p>
-                    <p className="text-zinc-400 text-sm">
-                      Adherence to this schedule allows for a <span className="text-white font-bold">35% reduction</span> in cumulative fatigue. Deviations must be logged.
-                    </p>
+                  {/* Insight Box */}
+                  <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex gap-4 items-start">
+                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-blue-900 text-sm mb-1">Manager Note</h4>
+                      <p className="text-blue-800 text-sm leading-relaxed">
+                        Adhering to this break structure is projected to reduce cumulative operator fatigue by <span className="font-bold">35%</span> based on historical physiological data.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Control Footer */}
-            <div className="p-6 border-t-4 border-zinc-800 bg-black flex justify-end gap-4">
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-100 bg-white rounded-b-2xl flex justify-end gap-3 z-10">
               <button
                 onClick={() => window.print()}
-                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold uppercase tracking-widest text-sm border border-zinc-600 flex items-center gap-2"
+                className="px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm border border-gray-300 rounded-lg transition-all shadow-sm flex items-center gap-2"
               >
-                <span>🖨</span> Print Manifest
+                <span>Print Report</span>
               </button>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="px-8 py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-black uppercase tracking-widest text-sm shadow-[0_0_15px_rgba(202,138,4,0.4)]"
+                className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-lg shadow-lg transition-all transform active:scale-95"
               >
-                Acknowledge
+                Done
               </button>
             </div>
 

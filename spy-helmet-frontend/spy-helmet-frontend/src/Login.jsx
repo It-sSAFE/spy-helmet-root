@@ -29,6 +29,30 @@ function Login() {
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("email", email);
         setMessage("✅ Login successful!");
+
+        /* 
+        // 🚨 TEST SCRIPT: Automatically send dummy sensor data on login (For Demo)
+        // Uncomment this block to simulate ESP32 data sending when a user logs in.
+        
+        const dummyPayload = {
+          helmet_ID: "demo-helmet-123",
+          BodyTemp: 37.0,
+          EnvTemp: 28.5,
+          Humidity: 45.2,
+          CO_ppm: 2.1,
+          CH4_ppm: 0.5,
+          HR: 85,
+          SpO2: 98,
+          Packet_no: 1
+        };
+
+        fetch(`${API_URL}/submit_reading`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dummyPayload)
+        }).then(r => console.log("Sent dummy reading:", r.status));
+        */
+
         setTimeout(() => navigate("/dashboard"), 1000);
       } else {
         setMessage(`❌ Error: ${data.detail || "Login failed"}`);
