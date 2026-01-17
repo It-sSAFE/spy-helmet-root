@@ -2,13 +2,22 @@ import requests
 import time
 import random
 import uuid
+import sys
+import os
 
-# URL for the new endpoint
-API_URL = "http://localhost:8000/submit_reading"
+# Use 127.0.0.1 to avoid IPv6 resolution issues in some containers
+# Inside the container, this points to the FastAPI app running on port 8000
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/submit_reading")
 
-# Generate a static UUID for this session so we track one helmet
-HELMET_ID = str(uuid.uuid4())
+
+# ⚠️ Using the Valid Helmet ID from seed_test_data.py
+# If this doesn't exist, run `python seed_test_data.py`
+HELMET_ID = "a34ef6a1-b853-4da4-a004-5cdf7dfcb1eb"
+
 packet_counter = 0
+
+print(f"🚀 Starting Simulation for Helmet ID: {HELMET_ID}", flush=True)
+print(f"📡 Sending to: {API_URL}", flush=True)
 
 def generate_sensor_reading(packet_num):
     # Simulated physiological data (Normal Range)
@@ -36,28 +45,24 @@ def generate_sensor_reading(packet_num):
         "Packet_no": packet_num
     }
 
-print(f"🚀 Starting Simulation for Helmet ID: {HELMET_ID}")
-print(f"📡 Sending to: {API_URL}")
-console.log("Sent")
+# Run for a limited time (e.g., 500 packets) to prevent infinite orphaned processes
+MAX_PACKETS = 500
 
-while True:
+while packet_counter < MAX_PACKETS:
     packet_counter += 1
     payload = generate_sensor_reading(packet_counter)
     
     try:
-        res = requests.post(API_URL, json=payload)
+        res = requests.post(API_URL, json=payload, timeout=5)
         status_icon = "✅" if res.status_code == 200 else "⚠️"
-        print(f"{status_icon} Packet #{packet_counter}: HR={payload['HR']} Temp={payload['BodyTemp']} | Res: {res.status_code}")
+        print(f"{status_icon} Packet #{packet_counter}: HR={payload['HR']} Temp={payload['BodyTemp']} | Res: {res.status_code}", flush=True)
         
-        # Print full response only on error or specific intervals to keep log clean
         if res.status_code != 200:
-             print(f"   Response: {res.text}")
+             print(f"   Response: {res.text}", flush=True)
 
     except Exception as e:
-        print(f"❌ Connection Failed: {e}")
-        console.log("failed")
-        time.sleep(2) # Wait longer on error
+        print(f"❌ Connection Failed: {e}", flush=True)
+        # If we can't connect, don't spam. Wait a bit.
+        time.sleep(2)
     
-    time.sleep(0.5) # 2 Hz frequency
-
-
+    time.sleep(0.05) # Speed up for testing

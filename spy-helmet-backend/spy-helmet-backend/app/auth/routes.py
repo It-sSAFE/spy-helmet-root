@@ -90,14 +90,15 @@ def login_user(user_data: schemas.UserLogin):
         token = auth.create_access_token(data={"sub": str(user[0])})
         
         # 🚀 TRIGGER SIMULATION (Fire & Forget)
-        # import subprocess
-        # try:
-        #     # Run test_sender.py in the background
-        #     subprocess.Popen(["python", "test_sender.py"])
-        #     print("🚀 Simulation started by login!")
-        #     pass
-        # except Exception as e:
-        #     print(f"⚠️ Failed to start simulation: {e}")
+        import subprocess
+        try:
+            # Run test_sender.py in the background
+            # Note: We rely on the container structure where app/.. is root or nearby
+            # Better to use absolute path or relative from known cwd
+            subprocess.Popen(["python", "test_sender.py"])
+            print("🚀 Simulation started by login!")
+        except Exception as e:
+            print(f"⚠️ Failed to start simulation: {e}")
 
         return {"access_token": token, "token_type": "bearer"}
         
