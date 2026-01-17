@@ -95,9 +95,6 @@ export default function Dashboard() {
         setBodyTemp(data.body_temp?.toFixed(1) || "--");
         setCH4(data.ch4_ppm?.toFixed(1) || "--");
         setCO(data.co_ppm?.toFixed(1) || "--");
-        setHumidity(data.humidity?.toFixed(1) || "--");
-        setEnvTemp(data.env_temp?.toFixed(1) || "--");
-        setSpO2(data.spo2 || "--");
         setLoading(false);
         setrprogress(false);
 
