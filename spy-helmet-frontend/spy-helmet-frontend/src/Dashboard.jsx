@@ -26,6 +26,9 @@ export default function Dashboard() {
   const [bodyTemp, setBodyTemp] = useState("--");
   const [ch4, setCH4] = useState("--");
   const [co, setCO] = useState("--");
+  const [humidity, setHumidity] = useState("--");
+  const [envTemp, setEnvTemp] = useState("--");
+  const [spo2, setSpO2] = useState("--");
   const [fatigueAlert, setFatigueAlert] = useState(false);
   const [sensorAlert, setSensorAlert] = useState(false);
   const [rprogress, setrprogress] = useState("");
@@ -92,6 +95,9 @@ export default function Dashboard() {
         setBodyTemp(data.body_temp?.toFixed(1) || "--");
         setCH4(data.ch4_ppm?.toFixed(1) || "--");
         setCO(data.co_ppm?.toFixed(1) || "--");
+        setHumidity(data.humidity?.toFixed(1) || "--");
+        setEnvTemp(data.env_temp?.toFixed(1) || "--");
+        setSpO2(data.spo2 || "--");
         setLoading(false);
         setrprogress(false);
 
@@ -273,6 +279,18 @@ export default function Dashboard() {
                   <div className="p-3 bg-gray-800 rounded-xl border border-red-500 hover:bg-gray-700 transition-colors">
                     <p className="text-sm text-gray-300">CO (Carbon Monoxide)</p>
                     <p className="text-2xl font-bold text-red-400">{co} ppm</p>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-xl border border-cyan-500 hover:bg-gray-700 transition-colors">
+                    <p className="text-sm text-gray-300">Humidity</p>
+                    <p className="text-2xl font-bold text-cyan-400">{humidity}%</p>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-xl border border-orange-500 hover:bg-gray-700 transition-colors">
+                    <p className="text-sm text-gray-300">Env Temp</p>
+                    <p className="text-2xl font-bold text-orange-400">{envTemp}°C</p>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-xl border border-purple-500 hover:bg-gray-700 transition-colors">
+                    <p className="text-sm text-gray-300">SpO2</p>
+                    <p className="text-2xl font-bold text-purple-400">{spo2}%</p>
                   </div>
                 </div>
               </div>
