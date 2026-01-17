@@ -1,27 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import axios from "axios";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
+  CartesianGrid
 } from "recharts";
+import Scene3D from "./Scene3D"; // Import the 3D Scene
 
 export default function Dashboard() {
   const [prediction, setPrediction] = useState("--");
   const [probability, setProbability] = useState("N/A");
   const [rawScores, setRawScores] = useState([0, 0, 0]);
   const [chartData, setChartData] = useState([]);
-  const [pieData, setPieData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [cardColor, setCardColor] = useState("bg-gray-900");
   const [heartRate, setHeartRate] = useState("--");
   const [bodyTemp, setBodyTemp] = useState("--");
   const [ch4, setCH4] = useState("--");
@@ -29,19 +23,17 @@ export default function Dashboard() {
   const [humidity, setHumidity] = useState("--");
   const [envTemp, setEnvTemp] = useState("--");
   const [spo2, setSpO2] = useState("--");
-  const [fatigueAlert, setFatigueAlert] = useState(false);
-  const [sensorAlert, setSensorAlert] = useState(false);
-  const [rprogress, setrprogress] = useState("");
   const [packetNo, setPacketNo] = useState("--");
   const [lastFetchStatus, setLastFetchStatus] = useState("init");
 
+  // Report Vars
+  const [weeklyReport, setWeeklyReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  // Connection Vars
   const [latency, setLatency] = useState(0);
   const [lastPacketTime, setLastPacketTime] = useState(Date.now());
   const [isDataStale, setIsDataStale] = useState(false);
-  const [blink, setBlink] = useState(false);
-  const [weeklyReport, setWeeklyReport] = useState(null);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const COLORS = ["#34D399", "#FBBF24", "#EF4444"];
 
   const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -56,40 +48,28 @@ export default function Dashboard() {
         const data = res.data;
 
         if (data.status === "collecting") {
-          setLoading(true);
-          setrprogress(data.reading_progress);
-
-          // Still update packet number if available so we know we are connected!
           const newPacketNo = data.packet_no || "--";
           if (newPacketNo !== packetNo) {
             setLastPacketTime(Date.now());
             setIsDataStale(false);
-            setBlink(true);
-            setTimeout(() => setBlink(false), 200);
             setPacketNo(newPacketNo);
           }
           return;
         }
 
-        const now = Date.now();
         const raw = data.raw_scores || [0, 0, 0];
         const prob = Math.max(...raw) * 100;
         const hr = data.heart_rate ?? 0;
-        const rprogress = 0;
-
         const newPacketNo = data.packet_no || "--";
 
         if (newPacketNo !== packetNo) {
           setLastPacketTime(Date.now());
           setIsDataStale(false);
-          setBlink(true);
-          setTimeout(() => setBlink(false), 200);
         } else if (Date.now() - lastPacketTime > 10000 && packetNo !== "--") {
           setIsDataStale(true);
         }
 
         setPrediction(data.prediction);
-        setrprogress(data.reading_progress);
         setPacketNo(newPacketNo);
         setRawScores(raw);
         setProbability(prob.toFixed(2));
@@ -100,51 +80,22 @@ export default function Dashboard() {
         setHumidity(data.humidity?.toFixed(1) || "--");
         setEnvTemp(data.env_temp?.toFixed(1) || "--");
         setSpO2(data.spo2 || "--");
-        setLoading(false);
-        setrprogress(false);
 
-        // 🟩 Color animation logic
-        setCardColor(
-          prob >= 90
-            ? "bg-green-900 border-green-600 animate-pulse"
-            : prob >= 50
-              ? "bg-yellow-900 border-yellow-600 animate-pulse"
-              : "bg-red-900 border-red-600 animate-pulse"
-        );
-
-        // 🟥 Fatigue Alert
-        setFatigueAlert(data.prediction === "Fatigue" && prob >= 80);
-
-        // 🟨 Sensor Alert (Heart rate 0)
-        setSensorAlert(hr === 0);
-
-        // 🧮 Chart Data
+        // Chart Data Update
         setChartData((prevData) => {
           const newData = [
             ...prevData,
             {
-              time: now,
+              time: Date.now(),
               probability: prob,
               fatigue: raw[2] * 100,
               stress: raw[1] * 100,
-              normal: raw[0] * 100
+              hr: hr
             }
           ];
-          return newData.filter((d) => now - d.time <= 120000);
+          return newData.filter((d) => Date.now() - d.time <= 60000); // 1 min window
         });
 
-        // 🥧 Pie Chart
-        const sum = raw.reduce((a, b) => a + b, 0);
-        const pieReady = sum > 0;
-        setPieData(
-          pieReady
-            ? [
-              { name: "Normal", value: raw[0] * 100 },
-              { name: "Stressed", value: raw[1] * 100 },
-              { name: "Fatigue", value: raw[2] * 100 }
-            ]
-            : []
-        );
       } catch (err) {
         console.error("Error fetching prediction:", err);
         setLastFetchStatus("error");
@@ -152,385 +103,196 @@ export default function Dashboard() {
     }, 500);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [packetNo]);
+
+  // Report Fetcher
+  const fetchReport = async () => {
+    if (!weeklyReport) {
+      try {
+        const res = await axios.get(`${API_URL}/generate_weekly_report`);
+        setWeeklyReport(res.data);
+      } catch (e) { console.error(e); }
+    }
+    setShowReportModal(true);
+  }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-6">
-      {/* 📡 Connection Status Indicator */}
-      <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg font-mono text-sm border shadow-lg transition-all duration-300 ${lastFetchStatus === 'success'
-        ? 'bg-green-900/90 border-green-400 text-green-100 shadow-[0_0_15px_rgba(74,222,128,0.5)]'
-        : 'bg-red-900/90 border-red-500 text-red-100 animate-pulse shadow-[0_0_15px_rgba(248,113,113,0.5)]'
-        }`}>
-        <div className="flex items-center gap-2">
-          <span className={`w-3 h-3 rounded-full ${isDataStale ? 'bg-yellow-500 animate-bounce' : lastFetchStatus === 'success' ? 'bg-green-400 animate-ping' : 'bg-red-500'}`}></span>
-          <span className="font-bold">
-            {isDataStale ? 'SENSOR OFFLINE / STALE' : lastFetchStatus === 'success' ? 'SYSTEM ONLINE' : 'CONNECTION ERROR'}
-          </span>
-        </div>
-        <div className="mt-1 flex justify-between gap-4 text-xs opacity-80">
-          <span className={`transition-colors duration-200 ${blink ? 'text-white font-bold scale-110' : 'text-gray-300'}`}>
-            Packet #: {packetNo}
-          </span>
-          <span>Latency: {latency}ms</span>
-        </div>
-      </div>
+    <div className="relative w-full h-screen bg-black overflow-hidden font-mono text-cyan-500 select-none">
 
-      {/* 🟥 Fatigue Alert */}
-      {
-        fatigueAlert && (
-          <div className="fixed inset-0 bg-red-800/80 z-50 flex items-center justify-center animate-pulse backdrop-blur-sm transition-all duration-500 ease-in-out">
-            <h1 className="text-white text-5xl font-extrabold animate-bounce drop-shadow-lg">
-              ⚠️ FATIGUE DETECTED!
+      {/* 🌌 3D BACKGROUND LAYER */}
+      <Suspense fallback={<div className="text-center mt-20 text-cyan-500 animate-pulse">Initializing Neural Link...</div>}>
+        <Scene3D heartRate={heartRate} bodyTemp={bodyTemp} />
+      </Suspense>
+
+      {/* 🛡️ HUD OVERLAY LAYER */}
+      <div className="absolute inset-0 z-10 flex flex-col justify-between pointer-events-none">
+
+        {/* --- TOP HUD --- */}
+        <div className="flex justify-between items-start p-6 bg-gradient-to-b from-black/90 to-transparent pointer-events-auto">
+          {/* Left: Branding */}
+          <div>
+            <h1 className="text-3xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">
+              SPY HELMET <span className="text-white text-sm not-italic opacity-50 px-2 border-l border-white/30">MK-III</span>
             </h1>
+            <p className="text-xs text-cyan-700 tracking-[0.3em]">BIOMETRIC TELEMETRY SYSTEM</p>
           </div>
-        )
-      }
 
-      {/* 🟨 Sensor Disconnect Alert */}
-      {
-        sensorAlert && (
-          <div className="fixed inset-0 flex items-center justify-center bg-yellow-700/20 backdrop-blur-sm border border-yellow-400 shadow-[0_0_25px_5px_rgba(255,255,0,0.5)] animate-pulse z-40">
-            <div className="text-center">
-              <h1 className="text-yellow-300 text-5xl font-extrabold tracking-wide animate-bounce drop-shadow-md">
-                WEAR THE HELMET
-              </h1>
+          {/* Right: Status */}
+          <div className="text-right">
+            <div className={`text-xl font-bold ${lastFetchStatus === 'success' ? 'text-green-500' : 'text-red-500'} animate-pulse`}>
+              {lastFetchStatus === 'success' ? '● SYSTEM ONLINE' : '○ DISCONNECTED'}
             </div>
-          </div>
-        )
-      }
-
-      {/* 🧠 Title */}
-      <h1 className="text-4xl font-extrabold text-center text-cyan-400 tracking-wide animate-fade-in mt-8">
-        <span role="img" aria-label="helmet">🛡</span> SPY HELMET DASHBOARD
-      </h1>
-      <p className="text-center text-gray-400 mt-1 mb-4">Live Prediction</p>
-
-      {/* 🌀 Loader */}
-      {
-        loading ? (
-          <div className="flex justify-center items-center h-96 flex-col gap-4">
-            <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-cyan-300 text-xl font-semibold animate-pulse">
-              Waiting for sensor data...
-            </p>
-            <p className="text-cyan-300 text-sm font-mono opacity-70">
-              {rprogress}
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* 🧾 Top Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gray-900 border border-cyan-700 shadow-md rounded-xl p-4 animate-fade-in hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-shadow">
-                <p className="text-md text-gray-300 mb-1">Prediction</p>
-                <p className="text-3xl font-bold text-cyan-300 animate-pulse">{prediction}</p>
-              </div>
-
-              <div className={`${cardColor} border shadow-md rounded-xl p-4 transition-all duration-300 animate-fade-in hover:scale-105`}>
-                <p className="text-md text-gray-300 mb-1">Confidence</p>
-                <p className="text-3xl font-bold text-green-400">{probability}%</p>
-              </div>
-
-              <div className="bg-gray-900 border border-yellow-600 shadow-md rounded-xl p-4 overflow-x-auto animate-fade-in">
-                <p className="text-md text-gray-300 mb-1">Raw Scores</p>
-                <pre className="text-yellow-300 text-sm font-mono">
-                  {JSON.stringify(rawScores, null, 2)}
-                </pre>
-              </div>
+            <div className="text-xs text-gray-500 flex gap-4 justify-end mt-1">
+              <span>LATENCY: {latency}ms</span>
+              <span>PKT: {packetNo}</span>
             </div>
-
-            {/* 📈 Charts */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-900 border border-cyan-800 p-4 rounded-xl shadow animate-fade-in">
-                <h2 className="text-center text-cyan-400 text-lg font-semibold mb-2">
-                  Confidence Trend (Bar Chart)
-                </h2>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={chartData.map(d => ({ ...d, time: new Date(d.time).toLocaleTimeString() }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="time" stroke="#aaa" fontSize={12} tick={false} />
-                    <YAxis stroke="#aaa" domain={[0, 100]} fontSize={12} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
-                      itemStyle={{ color: "#fff" }}
-                      labelStyle={{ color: "#aaa" }}
-                      formatter={(value) => [`${parseFloat(value || 0).toFixed(2)}%`, "confidence"]}
-                    />
-                    <Bar dataKey="probability" fill="#00FFFF" radius={[4, 4, 0, 0]} animationDuration={500} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-gray-900 border border-pink-700 p-4 rounded-xl shadow animate-fade-in">
-                <h2 className="text-center text-pink-400 text-lg font-semibold mb-2">
-                  Sensor Readings
-                </h2>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="p-3 bg-gray-800 rounded-xl border border-green-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">Heart Rate</p>
-                    <p className="text-2xl font-bold text-green-400">{heartRate} bpm</p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-xl border border-blue-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">Body Temp</p>
-                    <p className="text-2xl font-bold text-blue-400">{bodyTemp}°C</p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-xl border border-yellow-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">CH₄ (Methane)</p>
-                    <p className="text-2xl font-bold text-yellow-300">{ch4} ppm</p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-xl border border-red-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">CO (Carbon Monoxide)</p>
-                    <p className="text-2xl font-bold text-red-400">{co} ppm</p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-xl border border-cyan-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">Humidity</p>
-                    <p className="text-2xl font-bold text-cyan-400">{humidity}%</p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-xl border border-orange-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">Env Temp</p>
-                    <p className="text-2xl font-bold text-orange-400">{envTemp}°C</p>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-xl border border-purple-500 hover:bg-gray-700 transition-colors">
-                    <p className="text-sm text-gray-300">SpO2</p>
-                    <p className="text-2xl font-bold text-purple-400">{spo2}%</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 🧩 Pie Chart */}
-            <div className="mt-6 bg-gray-900 border border-cyan-800 p-4 rounded-xl shadow animate-fade-in">
-              <h2 className="text-center text-cyan-400 text-lg font-semibold mb-2">
-                State Distribution
-              </h2>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    innerRadius={50}
-                    paddingAngle={5}
-                    label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
-                    isAnimationActive={true}
-                    animationDuration={800}
-                    animationEasing="ease-in-out"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
-                    ))}
-                  </Pie>
-                  <Legend iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </>
-        )
-      }
-
-      {/* 🚧 INDUSTRIAL SAFETY REPORT MODULE 🚧 */}
-      <div className="mt-8 mb-12 flex justify-center w-full">
-        <button
-          onClick={async () => {
-            if (showReportModal) {
-              setShowReportModal(false);
-              return;
-            }
-            if (!weeklyReport) {
-              try {
-                const res = await axios.get(`${API_URL}/generate_weekly_report`);
-                setWeeklyReport(res.data);
-                setShowReportModal(true);
-              } catch (err) {
-                console.error("Failed to fetch report", err);
-                alert("Error generating report. Check console.");
-              }
-            } else {
-              setShowReportModal(true);
-            }
-          }}
-          // DESIGN: Heavy industrial button, looks like a physical push-plate
-          className="group relative bg-yellow-500 border-4 border-black hover:bg-yellow-400 active:bg-yellow-600 active:translate-y-1 transition-all duration-75 p-0"
-        >
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')] opacity-10"></div>
-          <div className="relative flex items-center gap-4 px-12 py-5">
-            <div className="bg-black text-yellow-500 font-bold font-mono border-2 border-black px-3 py-1 text-2xl">
-              ⚠
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-black/80">
-                System Control
-              </span>
-              <span className="text-xl font-black uppercase tracking-tight text-black">
-                Generate Safety Report
-              </span>
-            </div>
-          </div>
-        </button>
-      </div>
-
-      {/* 📋 Modern Corporate Report Modal */}
-      {showReportModal && weeklyReport && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 font-sans">
-
-          {/* Main Card */}
-          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-2xl flex flex-col animate-fade-in-up">
-
-            {/* Header */}
-            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white/90 backdrop-blur-md px-8 py-6 rounded-t-2xl">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
-                  <span className="text-blue-600">📊</span>
-                  Weekly Manager Insight
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  AI-driven analysis of workforce fatigue patterns
-                </p>
-              </div>
-              <button
-                onClick={() => setShowReportModal(false)}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 p-2 rounded-full transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Body Content */}
-            <div className="p-8 space-y-8 bg-gray-50">
-
-              {/* Timestamp & ID Block */}
-              <div className="flex justify-between items-center text-sm text-gray-400">
-                <span className="font-medium bg-white px-3 py-1 rounded-full border border-gray-200">ID: MN-4092-X</span>
-                <span>Generated: {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              </div>
-
-              {/* Key Metrics Grid - Apple Style */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* Risk Level */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Risk Assessment</span>
-                  <div className={`text-3xl font-bold tracking-tight ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' :
-                    weeklyReport.risk_level === 'MODERATE' ? 'text-yellow-500' :
-                      'text-green-500'
-                    }`}>
-                    {weeklyReport.risk_level}
-                  </div>
-                  <div className="mt-2 text-xs text-gray-400">Current shift evaluation</div>
-                </div>
-
-                {/* Fatigue Prediction */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Predicted Fatigue Load</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-gray-900">{weeklyReport.predicted_fatigue_day8}</span>
-                    <span className="text-sm font-medium text-gray-400">min</span>
-                  </div>
-                  {/* Visual Bar */}
-                  <div className="w-full bg-gray-100 h-1.5 mt-4 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full"
-                      style={{ width: `${Math.min(100, (weeklyReport.predicted_fatigue_day8 / 100) * 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Recommended Shift */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Suggested Shift</span>
-                  <div className="text-xl font-semibold text-gray-800 bg-blue-50 px-4 py-2 rounded-lg text-center border border-blue-100">
-                    {weeklyReport.recommended_shift}
-                  </div>
-                  <div className="mt-2 text-xs text-gray-400 text-center">Optimized for recovery</div>
-                </div>
-              </div>
-
-              {/* Detailed Data Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                {/* Report Text */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[500px]">
-                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-4">
-                    Analysis Summary
-                  </h3>
-                  <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
-                    <p className="whitespace-pre-wrap text-sm text-gray-600 leading-7 font-normal">
-                      {weeklyReport.weekly_report}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Shift Schedule Table */}
-                <div className="flex flex-col gap-6">
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide mb-4">
-                      Protocol: Mandatory Breaks
-                    </h3>
-
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
-                      <table className="w-full text-sm text-left text-gray-500">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                          <tr>
-                            <th scope="col" className="px-6 py-3">Time Window</th>
-                            <th scope="col" className="px-6 py-3 text-right">Duration</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {weeklyReport.recommended_breaks.map((b, idx) => (
-                            <tr key={idx} className="bg-white hover:bg-gray-50 transition-colors">
-                              <td className="px-6 py-4 font-medium text-gray-900">
-                                {b.start} <span className="text-gray-400 mx-2">→</span> {b.end}
-                              </td>
-                              <td className="px-6 py-4 text-right text-blue-600 font-semibold">
-                                {b.duration_min} min
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Insight Box */}
-                  <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex gap-4 items-start">
-                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-blue-900 text-sm mb-1">Manager Note</h4>
-                      <p className="text-blue-800 text-sm leading-relaxed">
-                        Adhering to this break structure is projected to reduce cumulative operator fatigue by <span className="font-bold">35%</span> based on historical physiological data.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-6 border-t border-gray-100 bg-white rounded-b-2xl flex justify-end gap-3 z-10">
-              <button
-                onClick={() => window.print()}
-                className="px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm border border-gray-300 rounded-lg transition-all shadow-sm flex items-center gap-2"
-              >
-                <span>Print Report</span>
-              </button>
-              <button
-                onClick={() => setShowReportModal(false)}
-                className="px-6 py-2.5 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-lg shadow-lg transition-all transform active:scale-95"
-              >
-                Done
-              </button>
-            </div>
-
           </div>
         </div>
-      )}
+
+        {/* --- CENTER (Empty for 3D View) --- */}
+        <div className="flex-grow flex items-center justify-between px-10 pointer-events-auto relative">
+
+          {/* Left Floating Box (ECG/HR) */}
+          <div className="bg-black/20 backdrop-blur-sm border border-cyan-800/30 p-2 rounded w-48 hidden md:block">
+            <div className="text-xs text-cyan-700 uppercase mb-1">Heart Rhythm</div>
+            <div className="h-10 border-b border-cyan-500/20 relative overflow-hidden">
+              {/* Simulated ECG Line */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent w-full animate-[ping_1s_linear_infinite]" style={{ animationDuration: `${60 / (heartRate || 60)}s` }}></div>
+            </div>
+          </div>
+
+          {/* Floating Alert if Fatigue */}
+          {prediction === "Fatigue" && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+              <div className="bg-red-900/60 border-2 border-red-500 text-red-100 px-10 py-6 rounded-lg backdrop-blur-md animate-bounce shadow-[0_0_50px_rgba(239,68,68,0.6)] text-center">
+                <h2 className="text-4xl font-extrabold tracking-widest">⚠ FATIGUE WARNING</h2>
+                <p className="text-sm uppercase tracking-wider mt-2">Operator Performance Compromised</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* --- BOTTOM CONSOLE (The Dashboard) --- */}
+        <div className="bg-black/80 backdrop-blur-lg border-t-2 border-cyan-500/50 p-4 h-[35vh] grid grid-cols-12 gap-4 pointer-events-auto shadow-[0_-10px_50px_rgba(6,182,212,0.15)]">
+
+          {/* PANEL 1: EKG / History */}
+          <div className="col-span-12 md:col-span-4 bg-black/40 border border-cyan-900/50 rounded-lg p-2 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 bg-cyan-900/50 text-[10px] px-2 py-0.5 text-cyan-200">HISTORICAL_LOG</div>
+            <h3 className="text-xs text-cyan-600 mb-1">CONFIDENCE TREND</h3>
+            <ResponsiveContainer width="100%" height="85%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorProb" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="time" hide />
+                <YAxis hide domain={[0, 100]} />
+                <Area type="monotone" dataKey="probability" stroke="#22d3ee" fillOpacity={1} fill="url(#colorProb)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* PANEL 2: RAW DATA & GAUGES */}
+          <div className="col-span-12 md:col-span-4 flex flex-col gap-2">
+            {/* Top: Main Prediction */}
+            <div className="flex-grow bg-black/40 border border-cyan-900/50 rounded-lg flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(6,182,212,0.1)]">
+              <div className="text-center">
+                <p className="text-xs text-cyan-600 tracking-widest mb-2">SYSTEM ANALYSIS</p>
+                <div className={`text-5xl font-black tracking-tighter ${prediction === 'Fatigue' ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,1)]' : prediction === 'Normal' ? 'text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]' : 'text-yellow-400'}`}>
+                  {prediction.toUpperCase()}
+                </div>
+                <p className="text-xl text-white font-bold mt-1">{probability}% <span className="text-xs text-gray-500 font-normal">CONFIDENCE</span></p>
+              </div>
+            </div>
+
+            {/* Bottom: Raw Scores Bar */}
+            <div className="h-16 bg-black/40 border border-cyan-900/50 rounded-lg p-2 flex items-center justify-around text-center">
+              <div>
+                <div className="text-[10px] text-gray-500">NORM</div>
+                <div className="text-green-400 font-bold">{(rawScores[0] * 100).toFixed(0)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-500">STRS</div>
+                <div className="text-yellow-400 font-bold">{(rawScores[1] * 100).toFixed(0)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-500">FAIL</div>
+                <div className="text-red-400 font-bold">{(rawScores[2] * 100).toFixed(0)}</div>
+              </div>
+              <div className="w-px h-full bg-gray-700"></div>
+              <button
+                onClick={fetchReport}
+                className="bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 px-4 py-1 text-xs font-bold rounded hover:shadow-[0_0_10px_rgba(234,179,8,0.5)] transition-all uppercase tracking-wider"
+              >
+                Report
+              </button>
+            </div>
+          </div>
+
+          {/* PANEL 3: ENVIRONMENTAL SENSORS */}
+          <div className="col-span-12 md:col-span-4 bg-black/40 border border-cyan-900/50 rounded-lg p-3 grid grid-cols-2 gap-2 overflow-y-auto">
+            <div className="absolute top-0 right-0 bg-cyan-900/50 text-[10px] px-2 py-0.5 text-cyan-200 rounded-bl">ENV_SENSORS</div>
+
+            <div className="col-span-2 text-xs text-cyan-700 font-bold uppercase border-b border-cyan-900/30 pb-1 mb-1">Atmospheric Data</div>
+
+            <SensorItem label="CH4 (Methane)" value={ch4} unit="ppm" color="text-purple-400" />
+            <SensorItem label="CO Level" value={co} unit="ppm" color="text-red-400" />
+            <SensorItem label="Humidity" value={humidity} unit="%" color="text-blue-400" />
+            <SensorItem label="Amb Temp" value={envTemp} unit="°C" color="text-orange-400" />
+            <SensorItem label="SpO2" value={spo2} unit="%" color="text-green-400" />
+          </div>
+
+        </div>
+
+        {/* Manager Report Modal - Simplified styling to match HUD */}
+        {showReportModal && (
+          <div className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+            <div className="bg-black border border-cyan-500 p-8 max-w-4xl w-full max-h-screen overflow-auto shadow-[0_0_50px_rgba(6,182,212,0.3)] relative">
+              <div className="flex justify-between items-center mb-6 border-b border-cyan-900 pb-4 sticky top-0 bg-black z-10">
+                <h2 className="text-2xl text-cyan-400 font-bold tracking-widest flex items-center gap-2">
+                  <span className="text-3xl">📊</span> WEEKLY REPORT
+                </h2>
+                <button onClick={() => setShowReportModal(false)} className="text-red-500 border border-red-500 px-4 py-1 hover:bg-red-900/50 tracking-widest">CLOSE_TERMINAL</button>
+              </div>
+              {weeklyReport ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="border border-cyan-800 p-4 text-center">
+                      <div className="text-gray-500 text-xs uppercase">Risk</div>
+                      <div className={`text-2xl font-bold ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' : 'text-green-500'}`}>{weeklyReport.risk_level}</div>
+                    </div>
+                    <div className="border border-cyan-800 p-4 text-center">
+                      <div className="text-gray-500 text-xs uppercase">Est. Fatigue</div>
+                      <div className="text-2xl font-bold text-white">{weeklyReport.predicted_fatigue_day8} min</div>
+                    </div>
+                    <div className="border border-cyan-800 p-4 text-center">
+                      <div className="text-gray-500 text-xs uppercase">Shift</div>
+                      <div className="text-2xl font-bold text-white">{weeklyReport.recommended_shift}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-cyan-100 font-mono whitespace-pre-wrap leading-relaxed border border-gray-800 p-4 bg-gray-900/50">
+                    {weeklyReport.weekly_report}
+                  </div>
+                </>
+              ) : <div className="text-cyan-500 animate-pulse text-center p-10">ANALYZING DATA STREAMS...</div>}
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
+}
+
+// Helper for sensors
+function SensorItem({ label, value, unit, color }) {
+  return (
+    <div className="bg-black/20 p-2 rounded border border-white/5 flex flex-col justify-center hover:bg-white/5 transition-colors">
+      <span className="text-[10px] text-gray-500 uppercase">{label}</span>
+      <span className={`text-xl font-mono font-bold ${color}`}>{value}<span className="text-xs text-gray-600 ml-1">{unit}</span></span>
+    </div>
+  )
 }

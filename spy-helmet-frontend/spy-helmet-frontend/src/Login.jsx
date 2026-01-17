@@ -30,28 +30,42 @@ function Login() {
         localStorage.setItem("email", email);
         setMessage("✅ Login successful!");
 
-        /* 
         // 🚨 TEST SCRIPT: Automatically send dummy sensor data on login (For Demo)
-        // Uncomment this block to simulate ESP32 data sending when a user logs in.
-        
-        const dummyPayload = {
-          helmet_ID: "demo-helmet-123",
-          BodyTemp: 37.0,
-          EnvTemp: 28.5,
-          Humidity: 45.2,
-          CO_ppm: 2.1,
-          CH4_ppm: 0.5,
-          HR: 85,
-          SpO2: 98,
-          Packet_no: 1
-        };
+        // This simulates an ESP32 sending data every 100ms for ~20 seconds.
+        let packetCount = 0;
+        const maxPackets = 200; // Run for 20 seconds
 
-        fetch(`${API_URL}/submit_reading`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dummyPayload)
-        }).then(r => console.log("Sent dummy reading:", r.status));
-        */
+        console.log("🚀 Starting Sensor Simulation...");
+
+        const simulationInterval = setInterval(() => {
+          if (packetCount >= maxPackets) {
+            clearInterval(simulationInterval);
+            console.log("✅ Simulation Complete");
+            return;
+          }
+
+          packetCount++;
+
+          // Generate randomized realistic values
+          const dummyPayload = {
+            helmet_ID: "demo-helmet-123",
+            BodyTemp: 36.5 + Math.random(), // 36.5 - 37.5
+            EnvTemp: 28.0 + Math.random() * 2,
+            Humidity: 45 + Math.random() * 5,
+            CO_ppm: Math.random() * 3,
+            CH4_ppm: Math.random(),
+            HR: 70 + Math.floor(Math.random() * 30), // 70 - 100 BPM
+            SpO2: 96 + Math.floor(Math.random() * 4),
+            Packet_no: packetCount
+          };
+
+          fetch(`${API_URL}/submit_reading`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dummyPayload)
+          }).catch(e => console.error("Sim error:", e));
+
+        }, 100); // Send every 100ms
 
         setTimeout(() => navigate("/dashboard"), 1000);
       } else {
