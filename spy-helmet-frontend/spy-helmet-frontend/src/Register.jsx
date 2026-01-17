@@ -3,7 +3,7 @@ import { useState } from "react";
 function Register() {
   const [helmetId, setHelmetId] = useState("");
   const [comName, setComName] = useState("");
-  const [role, setRole] = useState("guest");
+  const [role, setRole] = useState("readOnly");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,14 +57,14 @@ function Register() {
             onChange={(e) => setRole(e.target.value)}
             className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-700"
           >
-            <option value="guest">Guest</option>
+            <option value="readOnly">readOnly</option>
             <option value="admin">Admin</option>
           </select>
         </div>
 
         <input
-          type="email"
-          placeholder="Email"
+          type="text"
+          placeholder="User ID"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"

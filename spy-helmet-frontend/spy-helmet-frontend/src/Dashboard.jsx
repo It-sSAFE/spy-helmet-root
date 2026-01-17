@@ -219,7 +219,7 @@ export default function Dashboard() {
               </div>
 
               <div className={`${cardColor} border shadow-md rounded-xl p-4 transition-all duration-300 animate-fade-in hover:scale-105`}>
-                <p className="text-md text-gray-300 mb-1">Probability</p>
+                <p className="text-md text-gray-300 mb-1">Confidence</p>
                 <p className="text-3xl font-bold text-green-400">{probability}%</p>
               </div>
 
@@ -235,7 +235,7 @@ export default function Dashboard() {
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-900 border border-cyan-800 p-4 rounded-xl shadow animate-fade-in">
                 <h2 className="text-center text-cyan-400 text-lg font-semibold mb-2">
-                  Probability Trend (Bar Chart)
+                  Confidence Trend (Bar Chart)
                 </h2>
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={chartData.map(d => ({ ...d, time: new Date(d.time).toLocaleTimeString() }))}>
@@ -246,7 +246,7 @@ export default function Dashboard() {
                       contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
                       itemStyle={{ color: "#fff" }}
                       labelStyle={{ color: "#aaa" }}
-                      formatter={(value) => [`${parseFloat(value || 0).toFixed(2)}%`, "probability"]}
+                      formatter={(value) => [`${parseFloat(value || 0).toFixed(2)}%`, "confidence"]}
                     />
                     <Bar dataKey="probability" fill="#00FFFF" radius={[4, 4, 0, 0]} animationDuration={500} />
                   </BarChart>

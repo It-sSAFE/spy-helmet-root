@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 function Login() {
   const [helmetId, setHelmetId] = useState("");
   const [email, setEmail] = useState("");
-  const [role , setRole] = useState("guest");
+  const [role, setRole] = useState("readOnly");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ function Login() {
 
         <input
           type="text"
-          placeholder="Email"
+          placeholder="User ID"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -59,15 +59,15 @@ function Login() {
         />
 
         <div className="mb-4">
-  <select
-    value={role}
-    onChange={(e) => setRole(e.target.value)}
-    className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-700"
-  >
-    <option value="guest">Guest</option>
-    <option value="admin">Admin</option>
-  </select>
-</div>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-gray-700"
+          >
+            <option value="readOnly">readOnly</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
 
         <button
           onClick={handleLogin}
