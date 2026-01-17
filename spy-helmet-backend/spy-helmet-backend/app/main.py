@@ -158,5 +158,32 @@ async def submit_sensor_data(data: SensorInput, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ✅ WEEKLY REPORT PIPELINE (MOCKED DATA)
+from app_report.pipeline import weekly_fatigue_pipeline
+
+# Mock Data from test_pipeline.py
+MOCK_LAST_7_DAYS_KPI = [
+    {"fatigue_minutes": 40, "avg_recovery_time": 10, "co_exposure": 5, "heat_stress": 12, "avg_hr": 78},
+    {"fatigue_minutes": 50, "avg_recovery_time": 12, "co_exposure": 6, "heat_stress": 15, "avg_hr": 80},
+    {"fatigue_minutes": 60, "avg_recovery_time": 14, "co_exposure": 7, "heat_stress": 18, "avg_hr": 82},
+    {"fatigue_minutes": 68, "avg_recovery_time": 17, "co_exposure": 8, "heat_stress": 20, "avg_hr": 83},
+    {"fatigue_minutes": 75, "avg_recovery_time": 19, "co_exposure": 9, "heat_stress": 22, "avg_hr": 85},
+    {"fatigue_minutes": 80, "avg_recovery_time": 21, "co_exposure": 10, "heat_stress": 24, "avg_hr": 86},
+    {"fatigue_minutes": 83, "avg_recovery_time": 23, "co_exposure": 11, "heat_stress": 26, "avg_hr": 88},
+]
+
+@app.get("/generate_weekly_report")
+async def get_weekly_report():
+    try:
+        # Run pipeline with static demo data
+        result = weekly_fatigue_pipeline(
+            worker_id="W1024-DEMO",
+            last_7_days_kpi=MOCK_LAST_7_DAYS_KPI
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ✅ Mount authentication routes
 app.include_router(auth_router)

@@ -1,0 +1,12 @@
+# ---- Core numeric stack (LOCKED for stability) ----
+numpy<2
+scipy
+pandas
+joblib
+
+# ---- Machine Learning ----
+scikit-learn
+
+# ---- Backend (you'll need this next anyway) ----
+fastapi
+uvicorn

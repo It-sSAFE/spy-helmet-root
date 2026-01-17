@@ -18,6 +18,8 @@ tensorflow-cpu
 scikit-learn
 pandas
 numpy
+scipy
+joblib
 
 # 🛢️ Database (ORM + SQLite)
 sqlalchemy

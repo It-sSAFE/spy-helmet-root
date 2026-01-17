@@ -1,0 +1,5 @@
+Environment: spyhelmet_ml
+Python     : 3.10
+NumPy      : <2
+sklearn    : pinned
+Model      : weekly_fatigue_model.pkl
