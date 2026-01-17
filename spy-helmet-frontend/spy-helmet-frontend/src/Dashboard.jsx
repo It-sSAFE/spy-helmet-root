@@ -331,8 +331,8 @@ export default function Dashboard() {
         )
       }
 
-      {/* 📋 Weekly Report Button */}
-      <div className="mt-8 mb-12 flex justify-center animate-fade-in">
+      {/* 🚧 INDUSTRIAL SAFETY REPORT MODULE 🚧 */}
+      <div className="mt-8 mb-12 flex justify-center w-full">
         <button
           onClick={async () => {
             if (showReportModal) {
@@ -352,120 +352,173 @@ export default function Dashboard() {
               setShowReportModal(true);
             }
           }}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 px-10 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-all transform hover:scale-105 active:scale-95 flex items-center gap-3 text-lg border border-indigo-400/30"
+          // DESIGN: Heavy industrial button, looks like a physical push-plate
+          className="group relative bg-yellow-500 border-4 border-black hover:bg-yellow-400 active:bg-yellow-600 active:translate-y-1 transition-all duration-75 p-0"
         >
-          <span className="text-2xl">📋</span> Generate Weekly AI Manager Report
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')] opacity-10"></div>
+          <div className="relative flex items-center gap-4 px-12 py-5">
+            <div className="bg-black text-yellow-500 font-bold font-mono border-2 border-black px-3 py-1 text-2xl">
+              ⚠
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-xs font-mono font-bold uppercase tracking-widest text-black/80">
+                System Control
+              </span>
+              <span className="text-xl font-black uppercase tracking-tight text-black">
+                Generate Safety Report
+              </span>
+            </div>
+          </div>
         </button>
       </div>
 
-      {/* 📝 Report Modal / Section */}
+      {/* 📋 Report Modal / Industrial Terminal */}
       {showReportModal && weeklyReport && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 font-mono">
 
-            {/* Header */}
-            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 flex justify-between items-center z-10">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="text-cyan-400">📊</span> Weekly Manager Report
-              </h2>
+          {/* Main Terminal Chassis */}
+          <div className="bg-zinc-900 border-4 border-yellow-600 w-full max-w-5xl max-h-[95vh] overflow-y-auto shadow-[0_0_50px_rgba(234,179,8,0.2)] relative flex flex-col">
+
+            {/* 🚧 Hazard Header */}
+            <div
+              className="sticky top-0 z-10 flex justify-between items-center border-b-4 border-yellow-600 bg-yellow-500 px-6 py-4"
+              style={{
+                backgroundImage: "repeating-linear-gradient(45deg, #eab308, #eab308 10px, #ca8a04 10px, #ca8a04 20px)"
+              }}
+            >
+              <div className="bg-black px-4 py-2 border-2 border-white/20 shadow-lg">
+                <h2 className="text-2xl font-black text-yellow-500 tracking-widest uppercase flex items-center gap-3">
+                  <span className="animate-pulse text-red-500">●</span>
+                  Operator Safety Log
+                </h2>
+              </div>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="text-gray-400 hover:text-white transition-colors text-3xl leading-none"
+                className="bg-black hover:bg-red-600 text-white font-bold px-6 py-2 border-2 border-white/20 uppercase tracking-wider transition-colors"
               >
-                &times;
+                [ Close Terminal ]
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-8 space-y-8 bg-gray-900">
+            {/* Body Content */}
+            <div className="p-8 space-y-8 bg-zinc-900 text-zinc-300">
 
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Timestamp & ID Block */}
+              <div className="flex justify-between border-b border-zinc-700 pb-2 text-xs text-zinc-500 uppercase tracking-widest">
+                <span>Unit ID: MN-4092-X</span>
+                <span>Logged: {new Date().toISOString().split('T')[0]}</span>
+              </div>
+
+              {/* Key Metrics Grid - Rigid Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-4 border-zinc-700 bg-black">
 
                 {/* Risk Level */}
-                <div className={`p-4 rounded-xl border shadow-sm ${weeklyReport.risk_level === 'HIGH'
-                    ? 'bg-gray-800 border-red-600'
-                    : weeklyReport.risk_level === 'MODERATE'
-                      ? 'bg-gray-800 border-yellow-600'
-                      : 'bg-gray-800 border-green-600'
-                  }`}>
-                  <p className="text-gray-400 text-sm mb-1">Risk Level</p>
-                  <p className={`text-3xl font-bold ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' : weeklyReport.risk_level === 'MODERATE' ? 'text-yellow-400' : 'text-green-400'
+                <div className="p-6 border-b md:border-b-0 md:border-r border-zinc-700 flex flex-col justify-between">
+                  <span className="text-xs font-bold uppercase text-zinc-500 mb-2">Current Risk Assessment</span>
+                  <div className={`text-4xl font-black tracking-tighter px-4 py-2 border-l-4 ${weeklyReport.risk_level === 'HIGH' ? 'border-red-600 text-red-600 bg-red-900/10' :
+                      weeklyReport.risk_level === 'MODERATE' ? 'border-yellow-500 text-yellow-500 bg-yellow-900/10' :
+                        'border-green-500 text-green-500 bg-green-900/10'
                     }`}>
                     {weeklyReport.risk_level}
-                  </p>
+                  </div>
                 </div>
 
-                {/* Prediction */}
-                <div className="bg-gray-800 border border-cyan-700 p-4 rounded-xl shadow-sm">
-                  <p className="text-gray-400 text-sm mb-1">Predicted Fatigue (Day 8)</p>
-                  <p className="text-3xl font-bold text-cyan-300">
-                    {weeklyReport.predicted_fatigue_day8} <span className="text-lg text-gray-500 font-normal">min</span>
-                  </p>
+                {/* Fatigue Prediction */}
+                <div className="p-6 border-b md:border-b-0 md:border-r border-zinc-700 flex flex-col justify-between">
+                  <span className="text-xs font-bold uppercase text-zinc-500 mb-2">Fatigue Load (Prognosis)</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-black text-zinc-100">{weeklyReport.predicted_fatigue_day8}</span>
+                    <span className="text-sm font-bold text-zinc-500 uppercase">Minutes</span>
+                  </div>
+                  {/* Visual Bar */}
+                  <div className="w-full bg-zinc-800 h-2 mt-3">
+                    <div
+                      className="h-full bg-blue-500"
+                      style={{ width: `${Math.min(100, (weeklyReport.predicted_fatigue_day8 / 100) * 100)}%` }}
+                    ></div>
+                  </div>
                 </div>
 
-                {/* Shift */}
-                <div className="bg-gray-800 border border-purple-700 p-4 rounded-xl shadow-sm">
-                  <p className="text-gray-400 text-sm mb-1">Recommended Shift</p>
-                  <p className="text-xl font-bold text-purple-400 mt-2">
+                {/* Recommended Shift */}
+                <div className="p-6 flex flex-col justify-between">
+                  <span className="text-xs font-bold uppercase text-zinc-500 mb-2">Assigned Shift Pattern</span>
+                  <div className="text-2xl font-bold text-white border-2 border-zinc-700 bg-zinc-800 p-2 text-center uppercase">
                     {weeklyReport.recommended_shift}
-                  </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Detailed Report Section */}
+              {/* Detailed Data Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Text Report */}
-                <div className="bg-black/20 border border-gray-700 p-6 rounded-xl overflow-y-auto h-96">
-                  <pre className="whitespace-pre-wrap font-mono text-sm text-gray-300 leading-relaxed font-normal">
-                    {weeklyReport.weekly_report}
-                  </pre>
+                {/* Raw Log Output */}
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-bold text-yellow-600 uppercase mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-yellow-600"></span> Analysis Log
+                  </h3>
+                  <div className="bg-black border border-zinc-700 p-4 flex-grow font-mono text-xs text-green-500 leading-relaxed overflow-y-auto h-80 shadow-inner">
+                    <span className="text-green-800 block mb-2 opacity-50">{`>>> BEGIN_TRANSMISSION`}</span>
+                    <pre className="whitespace-pre-wrap font-inherit">
+                      {weeklyReport.weekly_report}
+                    </pre>
+                    <span className="text-green-800 block mt-2 opacity-50 animate-pulse">_</span>
+                  </div>
                 </div>
 
-                {/* Recommendations */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
-                    Suggested Break Schedule
+                {/* Shift Schedule Table */}
+                <div>
+                  <h3 className="text-sm font-bold text-yellow-600 uppercase mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-yellow-600"></span> Mandatory Break Protocol
                   </h3>
-                  <div className="space-y-3">
-                    {weeklyReport.recommended_breaks.map((b, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-600">
-                        <span className="text-gray-200 font-medium">{b.start} – {b.end}</span>
-                        <span className="bg-gray-700 text-gray-200 px-3 py-1 rounded text-sm">
-                          {b.duration_min} min
-                        </span>
-                      </div>
-                    ))}
+
+                  <div className="border-2 border-zinc-700 bg-zinc-800">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-3 bg-zinc-700 text-zinc-300 text-xs font-bold uppercase py-2 px-4">
+                      <div className="col-span-2">Time Window</div>
+                      <div className="text-right">Downtime</div>
+                    </div>
+
+                    {/* Rows */}
+                    <div className="divide-y divide-zinc-700">
+                      {weeklyReport.recommended_breaks.map((b, idx) => (
+                        <div key={idx} className="grid grid-cols-3 py-3 px-4 text-sm hover:bg-zinc-700/50 transition-colors">
+                          <div className="col-span-2 text-white font-medium tracking-wide">
+                            {b.start} <span className="text-zinc-500 mx-1">➜</span> {b.end}
+                          </div>
+                          <div className="text-right text-yellow-500 font-bold">
+                            {b.duration_min} MIN
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Note Box */}
-                  <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-600">
-                    <p className="text-gray-300 text-sm flex gap-2">
-                      <span className="text-yellow-500">💡</span>
-                      <span>
-                        <strong>Note:</strong> This schedule is optimized to reduce cumulative fatigue by ~35% based on the worker's recent physiological trends.
-                      </span>
+                  {/* Warning Box */}
+                  <div className="mt-6 border-l-4 border-yellow-500 bg-yellow-900/20 p-4">
+                    <p className="text-yellow-200 text-xs uppercase tracking-wide font-bold mb-1">
+                      ⚠ Operational Directive
+                    </p>
+                    <p className="text-zinc-400 text-sm">
+                      Adherence to this schedule allows for a <span className="text-white font-bold">35% reduction</span> in cumulative fatigue. Deviations must be logged.
                     </p>
                   </div>
                 </div>
               </div>
-
             </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-gray-700 bg-gray-900 flex justify-end gap-3">
+            {/* Control Footer */}
+            <div className="p-6 border-t-4 border-zinc-800 bg-black flex justify-end gap-4">
               <button
                 onClick={() => window.print()}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white rounded transition-colors"
+                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold uppercase tracking-widest text-sm border border-zinc-600 flex items-center gap-2"
               >
-                Print
+                <span>🖨</span> Print Manifest
               </button>
               <button
                 onClick={() => setShowReportModal(false)}
-                className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded transition-colors"
+                className="px-8 py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-black uppercase tracking-widest text-sm shadow-[0_0_15px_rgba(202,138,4,0.4)]"
               >
-                Close
+                Acknowledge
               </button>
             </div>
 
