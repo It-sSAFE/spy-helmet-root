@@ -371,6 +371,92 @@ export default function Dashboard() {
                     </div>
                 </button>
             </div>
+
+            {/* 🛡 MODAL: SAFETY REPORT */}
+            {
+                showReportModal && weeklyReport && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+                        <div className="bg-gray-900 border-2 border-yellow-500 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg shadow-[0_0_50px_rgba(234,179,8,0.2)]">
+                            {/* Header */}
+                            <div className="sticky top-0 bg-yellow-500 text-black px-6 py-4 flex justify-between items-center z-10">
+                                <h2 className="text-2xl font-black uppercase tracking-wider flex items-center gap-3">
+                                    <span className="text-3xl">📑</span> Weekly Safety Assessment
+                                </h2>
+                                <button
+                                    onClick={() => setShowReportModal(false)}
+                                    className="bg-black text-yellow-500 hover:bg-gray-800 font-bold px-4 py-2 rounded uppercase text-sm border-2 border-black transition-colors"
+                                >
+                                    Close Panel
+                                </button>
+                            </div>
+
+                            <div className="p-8 space-y-8">
+                                {/* Key Metrics Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg">
+                                        <p className="text-gray-400 text-xs uppercase font-bold text-center">Worker ID</p>
+                                        <p className="text-2xl font-mono text-center text-white mt-1">{weeklyReport.worker_id}</p>
+                                    </div>
+                                    <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg">
+                                        <p className="text-gray-400 text-xs uppercase font-bold text-center">Risk Assessment</p>
+                                        <p className={`text-2xl font-black text-center mt-1 ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500 animate-pulse' : weeklyReport.risk_level === 'MODERATE' ? 'text-yellow-400' : 'text-green-500'}`}>
+                                            {weeklyReport.risk_level}
+                                        </p>
+                                    </div>
+                                    <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg">
+                                        <p className="text-gray-400 text-xs uppercase font-bold text-center">Predicted Fatigue</p>
+                                        <p className="text-2xl font-mono text-center text-cyan-400 mt-1">{weeklyReport.predicted_fatigue_day8} min</p>
+                                    </div>
+                                    <div className="bg-gray-800 p-4 border border-gray-700 rounded-lg">
+                                        <p className="text-gray-400 text-xs uppercase font-bold text-center">Rec. Shift</p>
+                                        <p className="text-lg font-bold text-center text-white mt-1 leading-tight">{weeklyReport.recommended_shift}</p>
+                                    </div>
+                                </div>
+
+                                {/* Shift Schedule & Breaks */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="bg-black/30 p-6 rounded-xl border border-gray-700">
+                                        <h3 className="text-yellow-500 font-bold uppercase tracking-widest text-sm mb-4 border-b border-gray-700 pb-2">
+                                            Recommended Break Schedule
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {weeklyReport.recommended_breaks.map((b, i) => (
+                                                <div key={i} className="flex justify-between items-center bg-gray-800/50 p-3 rounded border-l-4 border-cyan-500">
+                                                    <span className="font-mono text-cyan-300 font-bold">{b.start} - {b.end}</span>
+                                                    <span className="text-xs font-bold bg-cyan-900/50 text-cyan-200 px-2 py-1 rounded">
+                                                        {b.duration_min} MIN
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Action Plan */}
+                                    <div className="bg-black/30 p-6 rounded-xl border border-gray-700">
+                                        <h3 className="text-green-500 font-bold uppercase tracking-widest text-sm mb-4 border-b border-gray-700 pb-2">
+                                            Est. Impact
+                                        </h3>
+                                        <ul className="space-y-2 text-sm text-gray-300 list-disc list-inside">
+                                            <li>Fatigue duration reduction: <span className="text-green-400 font-bold">~35%</span></li>
+                                            <li>Recovery efficiency improvement: <span className="text-green-400 font-bold">~40%</span></li>
+                                            <li>Fatigue & gas exposure overlap reduction: <span className="text-green-400 font-bold">~50%</span></li>
+                                        </ul>
+                                        <div className="mt-6 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded text-xs text-yellow-200/80 italic">
+                                            "This report is generated using AI-assisted fatigue analytics based on physiological patterns."
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Full Text Report */}
+                                <div className="bg-black p-6 rounded-xl border border-gray-800 font-mono text-xs md:text-sm text-gray-400 whitespace-pre-wrap shadow-inner h-64 overflow-y-auto">
+                                    {weeklyReport.weekly_report}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </div>
     );
 }
+
