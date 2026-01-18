@@ -11,7 +11,9 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  ScatterChart,
+  Scatter
 } from "recharts";
 
 export default function Dashboard() {
@@ -127,7 +129,9 @@ export default function Dashboard() {
               probability: prob,
               fatigue: raw[2] * 100,
               stress: raw[1] * 100,
-              normal: raw[0] * 100
+              normal: raw[0] * 100,
+              spo2: typeof data.spo2 === 'number' ? data.spo2 : null,
+              bodyTemp: typeof data.body_temp === 'number' ? data.body_temp : null
             }
           ];
           return newData.filter((d) => now - d.time <= 120000);
@@ -325,6 +329,47 @@ export default function Dashboard() {
                   </Pie>
                   <Legend iconType="circle" />
                 </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* 🌡️ Heat Stress Analysis Chart (SpO2 vs BodyTemp) */}
+            <div className="mt-6 bg-gray-900 border border-orange-700 p-4 rounded-xl shadow animate-fade-in">
+              <h2 className="text-center text-orange-400 text-lg font-semibold mb-2">
+                Heat Stress Correlation (SpO2 vs Body Temp)
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis
+                    type="number"
+                    dataKey="bodyTemp"
+                    name="Body Temp"
+                    unit="°C"
+                    stroke="#aaa"
+                    domain={[30, 45]}
+                    tick={{ fill: '#aaa' }}
+                    label={{ value: 'Body Temperature (°C)', position: 'insideBottom', offset: -5, fill: '#aaa' }}
+                  />
+                  <YAxis
+                    type="number"
+                    dataKey="spo2"
+                    name="SpO2"
+                    unit="%"
+                    stroke="#aaa"
+                    domain={[80, 100]}
+                    tick={{ fill: '#aaa' }}
+                    label={{ value: 'SpO2 (%)', angle: -90, position: 'insideLeft', fill: '#aaa' }}
+                  />
+                  <Tooltip
+                    cursor={{ strokeDasharray: '3 3' }}
+                    contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
+                    itemStyle={{ color: "#fff" }}
+                    labelStyle={{ color: "#aaa" }}
+                    formatter={(value, name) => [value, name === 'spo2' ? 'SpO2' : 'Body Temp']}
+                  />
+                  <Legend verticalAlign="top" />
+                  <Scatter name="Vitals Correlation" data={chartData} fill="#f97316" animationDuration={500} shape="circle" />
+                </ScatterChart>
               </ResponsiveContainer>
             </div>
           </>

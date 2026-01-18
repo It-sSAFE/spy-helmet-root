@@ -12,7 +12,20 @@ from tensorflow.keras.models import load_model
 import numpy as np
 
 # Load model only once
-model = load_model("app/model/helmet2.keras")
+# Load model only once
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_PATH = os.path.join(BASE_DIR, "app", "model", "helmet2.keras")
+
+try:
+    if os.path.exists(MODEL_PATH):
+        model = load_model(MODEL_PATH)
+        print(f"SUCCESS: Loaded fatigue model from {MODEL_PATH}")
+    else:
+        print(f"CRITICAL WARNING: Fatigue model not found at {MODEL_PATH}")
+        model = None
+except Exception as e:
+    print(f"CRITICAL ERROR: Failed to load fatigue model: {e}")
+    model = None
 
 # Class index to label mapping
 class_names = {0: "Normal", 1: "Stressed", 2: "Fatigue"}
@@ -28,6 +41,13 @@ def predict_fatigue(sequence: np.ndarray) -> dict:
     sequence = np.expand_dims(sequence, axis=0)
 
     # Run prediction
+    if model is None:
+        return {
+            "prediction": "Error",
+            "confidence": 0.0,
+            "raw_scores": [0.0, 0.0, 0.0]
+        }
+    
     prediction = model.predict(sequence)
     predicted_index = int(np.argmax(prediction[0]))
     confidence = float(prediction[0][predicted_index] * 100)

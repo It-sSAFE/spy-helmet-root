@@ -11,13 +11,26 @@ from .report import generate_weekly_manager_report
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "weekly_fatigue_model.pkl")
 
-model = joblib.load(MODEL_PATH)
+
+try:
+    if os.path.exists(MODEL_PATH):
+        model = joblib.load(MODEL_PATH)
+    else:
+        print(f"WARNING: Report model not found at {MODEL_PATH}")
+        model = None
+except Exception as e:
+    print(f"ERROR: Failed to load report model: {e}")
+    model = None
 
 
 def weekly_fatigue_pipeline(worker_id, last_7_days_kpi):
     features = extract_features(last_7_days_kpi)
 
-    predicted = float(model.predict(features)[0])
+    if model is None:
+        # Fallback if model failed to load
+        predicted = 50.0 # Default fallback
+    else:
+        predicted = float(model.predict(features)[0])
     predicted = round(predicted, 1)
 
     risk = classify_risk(predicted)
