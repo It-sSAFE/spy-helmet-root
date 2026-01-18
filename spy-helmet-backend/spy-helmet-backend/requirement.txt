@@ -17,7 +17,7 @@ python-jose[cryptography]
 tensorflow-cpu
 scikit-learn
 pandas
-numpy
+numpy<2
 scipy
 joblib
 
