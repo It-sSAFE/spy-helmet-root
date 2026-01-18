@@ -1,27 +1,25 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-    BarChart,
-    Bar,
+    AreaChart,
+    Area,
     XAxis,
     YAxis,
     Tooltip,
     ResponsiveContainer,
-    CartesianGrid,
-    PieChart,
-    Pie,
-    Cell,
-    Legend
+    CartesianGrid
 } from "recharts";
 
 export default function Dashboard() {
     const [prediction, setPrediction] = useState("--");
     const [probability, setProbability] = useState("N/A");
-    const [rawScores, setRawScores] = useState([0, 0, 0]);
-    const [chartData, setChartData] = useState([]);
-    const [pieData, setPieData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [cardColor, setCardColor] = useState("bg-gray-900");
+
+    // Real-time chart data arrays
+    const [fatigueData, setFatigueData] = useState([]);
+    const [heartRateData, setHeartRateData] = useState([]);
+    const [tempData, setTempData] = useState([]);
+
+    // Sensor States
     const [heartRate, setHeartRate] = useState("--");
     const [bodyTemp, setBodyTemp] = useState("--");
     const [ch4, setCH4] = useState("--");
@@ -29,348 +27,232 @@ export default function Dashboard() {
     const [humidity, setHumidity] = useState("--");
     const [envTemp, setEnvTemp] = useState("--");
     const [spo2, setSpO2] = useState("--");
-    const [fatigueAlert, setFatigueAlert] = useState(false);
-    const [sensorAlert, setSensorAlert] = useState(false);
-    const [rprogress, setrprogress] = useState("");
+
+    // System States
     const [packetNo, setPacketNo] = useState("--");
     const [lastFetchStatus, setLastFetchStatus] = useState("init");
-
     const [latency, setLatency] = useState(0);
-    const [lastPacketTime, setLastPacketTime] = useState(Date.now());
-    const [isDataStale, setIsDataStale] = useState(false);
-    const [blink, setBlink] = useState(false);
+
+    // Report Modal
     const [weeklyReport, setWeeklyReport] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
-    const COLORS = ["#34D399", "#FBBF24", "#EF4444"];
 
     const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+    // Data Fetching Loop
     useEffect(() => {
         const interval = setInterval(async () => {
             const start = Date.now();
             try {
+                // Fetch Real-time prediction and sensor data from Backend
+                // The backend uses the 'helmet.keras' model to generate these predictions
                 const res = await axios.get(`${API_URL}/live_predict`);
-                const lat = Date.now() - start;
-                setLatency(lat);
+
+                setLatency(Date.now() - start);
                 setLastFetchStatus("success");
                 const data = res.data;
 
                 if (data.status === "collecting") {
-                    setLoading(true);
-                    setrprogress(data.reading_progress);
-
-                    // Still update packet number if available so we know we are connected!
-                    const newPacketNo = data.packet_no || "--";
-                    if (newPacketNo !== packetNo) {
-                        setLastPacketTime(Date.now());
-                        setIsDataStale(false);
-                        setBlink(true);
-                        setTimeout(() => setBlink(false), 200);
-                        setPacketNo(newPacketNo);
-                    }
+                    setPacketNo(data.packet_no || "--");
                     return;
                 }
 
-                const now = Date.now();
-                const raw = data.raw_scores || [0, 0, 0];
-                const prob = Math.max(...raw) * 100;
-                const hr = data.heart_rate ?? 0;
-                const rprogress = 0;
+                const now = new Date().toLocaleTimeString();
+                const prob = Math.max(...(data.raw_scores || [0, 0, 0])) * 100;
 
-                const newPacketNo = data.packet_no || "--";
-
-                if (newPacketNo !== packetNo) {
-                    setLastPacketTime(Date.now());
-                    setIsDataStale(false);
-                    setBlink(true);
-                    setTimeout(() => setBlink(false), 200);
-                } else if (Date.now() - lastPacketTime > 10000 && packetNo !== "--") {
-                    setIsDataStale(true);
-                }
-
+                // Update Metrics
                 setPrediction(data.prediction);
-                setrprogress(data.reading_progress);
-                setPacketNo(newPacketNo);
-                setRawScores(raw);
-                setProbability(prob.toFixed(2));
-                setHeartRate(hr ? hr.toFixed(1) : "--");
+                setPacketNo(data.packet_no || "--");
+                setProbability(prob.toFixed(1));
+
+                setHeartRate(data.heart_rate ? data.heart_rate.toFixed(0) : "--");
                 setBodyTemp(data.body_temp?.toFixed(1) || "--");
                 setCH4(data.ch4_ppm?.toFixed(1) || "--");
                 setCO(data.co_ppm?.toFixed(1) || "--");
-                setHumidity(data.humidity?.toFixed(1) || "--");
+                setHumidity(data.humidity?.toFixed(0) || "--");
                 setEnvTemp(data.env_temp?.toFixed(1) || "--");
                 setSpO2(data.spo2 || "--");
-                setLoading(false);
-                setrprogress(false);
 
-                // 🟩 Color animation logic
-                setCardColor(
-                    prob >= 90
-                        ? "bg-green-900 border-green-600 animate-pulse"
-                        : prob >= 50
-                            ? "bg-yellow-900 border-yellow-600 animate-pulse"
-                            : "bg-red-900 border-red-600 animate-pulse"
-                );
+                // Update Charts (Keep last 30 points)
+                const updateChart = (prev, val) => {
+                    const newItem = { time: now, value: val };
+                    const newArr = [...prev, newItem];
+                    return newArr.length > 30 ? newArr.slice(newArr.length - 30) : newArr;
+                };
 
-                // 🟥 Fatigue Alert
-                setFatigueAlert(data.prediction === "Fatigue" && prob >= 80);
+                setFatigueData(prev => updateChart(prev, prob));
+                setHeartRateData(prev => updateChart(prev, data.heart_rate || 0));
+                setTempData(prev => updateChart(prev, data.body_temp || 0));
 
-                // 🟨 Sensor Alert (Heart rate 0)
-                setSensorAlert(hr === 0);
-
-                // 🧮 Chart Data
-                setChartData((prevData) => {
-                    const newData = [
-                        ...prevData,
-                        {
-                            time: now,
-                            probability: prob,
-                            fatigue: raw[2] * 100,
-                            stress: raw[1] * 100,
-                            normal: raw[0] * 100
-                        }
-                    ];
-                    return newData.filter((d) => now - d.time <= 120000);
-                });
-
-                // 🥧 Pie Chart
-                const sum = raw.reduce((a, b) => a + b, 0);
-                const pieReady = sum > 0;
-                setPieData(
-                    pieReady
-                        ? [
-                            { name: "Normal", value: raw[0] * 100 },
-                            { name: "Stressed", value: raw[1] * 100 },
-                            { name: "Fatigue", value: raw[2] * 100 }
-                        ]
-                        : []
-                );
             } catch (err) {
-                console.error("Error fetching prediction:", err);
+                console.error("Dashboard Polling Error:", err);
                 setLastFetchStatus("error");
             }
-        }, 500);
-
+        }, 500); // 500ms update rate
         return () => clearInterval(interval);
     }, []);
 
+    const fetchReport = async () => {
+        if (!weeklyReport) {
+            try {
+                const res = await axios.get(`${API_URL}/generate_weekly_report`);
+                setWeeklyReport(res.data);
+            } catch (e) { console.error(e); }
+        }
+        setShowReportModal(true);
+    }
+
+    // Helper Components
+    const StatusBadge = ({ status }) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${status === 'success' ? 'bg-green-600' : 'bg-red-600'} animate-pulse`}></span>
+            {status === 'success' ? 'Live' : 'Offline'}
+        </span>
+    );
+
+    const ChartCard = ({ title, data, color, yDomain }) => (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 h-64 flex flex-col">
+            <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">{title}</h4>
+            <div className="flex-grow">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data}>
+                        <defs>
+                            <linearGradient id={`grad${color}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={color} stopOpacity={0.2} />
+                                <stop offset="95%" stopColor={color} stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                        <XAxis dataKey="time" hide />
+                        <YAxis hide domain={yDomain} />
+                        <Tooltip
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                            itemStyle={{ color: '#374151', fontSize: '12px', fontWeight: 'bold' }}
+                        />
+                        <Area type="monotone" dataKey="value" stroke={color} fillOpacity={1} fill={`url(#grad${color})`} strokeWidth={2} />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="relative min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-6">
-            {/* 📡 Connection Status Indicator */}
-            <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg font-mono text-sm border shadow-lg transition-all duration-300 ${lastFetchStatus === 'success'
-                ? 'bg-green-900/90 border-green-400 text-green-100 shadow-[0_0_15px_rgba(74,222,128,0.5)]'
-                : 'bg-red-900/90 border-red-500 text-red-100 animate-pulse shadow-[0_0_15px_rgba(248,113,113,0.5)]'
-                }`}>
-                <div className="flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-full ${isDataStale ? 'bg-yellow-500 animate-bounce' : lastFetchStatus === 'success' ? 'bg-green-400 animate-ping' : 'bg-red-500'}`}></span>
-                    <span className="font-bold">
-                        {isDataStale ? 'SENSOR OFFLINE / STALE' : lastFetchStatus === 'success' ? 'SYSTEM ONLINE' : 'CONNECTION ERROR'}
-                    </span>
+        <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+
+            {/* Navbar */}
+            <nav className="bg-white border-b border-gray-200 sticky top-0 z-30 px-6 py-3 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="bg-blue-600 text-white p-1.5 rounded-lg">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <span className="font-bold text-lg tracking-tight text-gray-800">SpyHelmet<span className="text-gray-400 font-normal">Manager</span></span>
                 </div>
-                <div className="mt-1 flex justify-between gap-4 text-xs opacity-80">
-                    <span className={`transition-colors duration-200 ${blink ? 'text-white font-bold scale-110' : 'text-gray-300'}`}>
-                        Packet #: {packetNo}
-                    </span>
-                    <span>Latency: {latency}ms</span>
+                <div className="flex items-center gap-4">
+                    <div className="text-right hidden sm:block">
+                        <div className="text-[10px] text-gray-400 uppercase font-bold">Latency</div>
+                        <div className="text-xs font-mono font-medium">{latency}ms</div>
+                    </div>
+                    <StatusBadge status={lastFetchStatus} />
+                    <button onClick={fetchReport} className="bg-gray-900 hover:bg-black text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+                        Manager Reports
+                    </button>
                 </div>
-            </div>
+            </nav>
 
-            {/* 🟥 Fatigue Alert */}
-            {
-                fatigueAlert && (
-                    <div className="fixed inset-0 bg-red-800/80 z-50 flex items-center justify-center animate-pulse backdrop-blur-sm transition-all duration-500 ease-in-out">
-                        <h1 className="text-white text-5xl font-extrabold animate-bounce drop-shadow-lg">
-                            ⚠️ FATIGUE DETECTED!
-                        </h1>
-                    </div>
-                )
-            }
+            <main className="max-w-7xl mx-auto p-6 space-y-6">
 
-            {/* 🟨 Sensor Disconnect Alert */}
-            {
-                sensorAlert && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-yellow-700/20 backdrop-blur-sm border border-yellow-400 shadow-[0_0_25px_5px_rgba(255,255,0,0.5)] animate-pulse z-40">
-                        <div className="text-center">
-                            <h1 className="text-yellow-300 text-5xl font-extrabold tracking-wide animate-bounce drop-shadow-md">
-                                WEAR THE HELMET
-                            </h1>
+                {/* Top Status Row */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center relative overflow-hidden">
+                        <div className="relative z-10">
+                            <h2 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Operator Status</h2>
+                            <div className="flex items-center gap-4">
+                                <span className={`text-5xl font-extrabold tracking-tight ${prediction === 'Fatigue' ? 'text-red-600' : 'text-gray-900'}`}>
+                                    {prediction}
+                                </span>
+                                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
+                                    {probability}% Confidence
+                                </span>
+                            </div>
                         </div>
                     </div>
-                )
-            }
 
-            {/* 🧠 Title */}
-            <h1 className="text-4xl font-extrabold text-center text-cyan-400 tracking-wide animate-fade-in mt-8">
-                <span role="img" aria-label="helmet">🛡</span> SPY HELMET DASHBOARD
-            </h1>
-            <p className="text-center text-gray-400 mt-1 mb-4">Live Prediction</p>
-
-            {/* 🌀 Loader */}
-            {
-                loading ? (
-                    <div className="flex justify-center items-center h-96 flex-col gap-4">
-                        <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-cyan-300 text-xl font-semibold animate-pulse">
-                            Waiting for sensor data...
-                        </p>
-                        <p className="text-cyan-300 text-sm font-mono opacity-70">
-                            {rprogress}
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        {/* 🧾 Top Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-gray-900 border border-cyan-700 shadow-md rounded-xl p-4 animate-fade-in hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-shadow">
-                                <p className="text-md text-gray-300 mb-1">Prediction</p>
-                                <p className="text-3xl font-bold text-cyan-300 animate-pulse">{prediction}</p>
-                            </div>
-
-                            <div className={`${cardColor} border shadow-md rounded-xl p-4 transition-all duration-300 animate-fade-in hover:scale-105`}>
-                                <p className="text-md text-gray-300 mb-1">Confidence</p>
-                                <p className="text-3xl font-bold text-green-400">{probability}%</p>
-                            </div>
-
-                            <div className="bg-gray-900 border border-yellow-600 shadow-md rounded-xl p-4 overflow-x-auto animate-fade-in">
-                                <p className="text-md text-gray-300 mb-1">Raw Scores</p>
-                                <pre className="text-yellow-300 text-sm font-mono">
-                                    {JSON.stringify(rawScores, null, 2)}
-                                </pre>
-                            </div>
+                    {/* Quick Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="text-gray-400 text-xs uppercase font-bold">Packet</div>
+                            <div className="text-2xl font-mono font-bold text-gray-800">{packetNo}</div>
                         </div>
-
-                        {/* 📈 Charts */}
-                        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-gray-900 border border-cyan-800 p-4 rounded-xl shadow animate-fade-in">
-                                <h2 className="text-center text-cyan-400 text-lg font-semibold mb-2">
-                                    Confidence Trend (Bar Chart)
-                                </h2>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <BarChart data={chartData.map(d => ({ ...d, time: new Date(d.time).toLocaleTimeString() }))}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                                        <XAxis dataKey="time" stroke="#aaa" fontSize={12} tick={false} />
-                                        <YAxis stroke="#aaa" domain={[0, 100]} fontSize={12} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
-                                            itemStyle={{ color: "#fff" }}
-                                            labelStyle={{ color: "#aaa" }}
-                                            formatter={(value) => [`${parseFloat(value || 0).toFixed(2)}%`, "confidence"]}
-                                        />
-                                        <Bar dataKey="probability" fill="#00FFFF" radius={[4, 4, 0, 0]} animationDuration={500} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-
-                            <div className="bg-gray-900 border border-pink-700 p-4 rounded-xl shadow animate-fade-in">
-                                <h2 className="text-center text-pink-400 text-lg font-semibold mb-2">
-                                    Sensor Readings
-                                </h2>
-                                <div className="grid grid-cols-2 gap-4 text-center">
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-green-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">Heart Rate</p>
-                                        <p className="text-2xl font-bold text-green-400">{heartRate} bpm</p>
-                                    </div>
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-blue-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">Body Temp</p>
-                                        <p className="text-2xl font-bold text-blue-400">{bodyTemp}°C</p>
-                                    </div>
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-yellow-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">CH₄ (Methane)</p>
-                                        <p className="text-2xl font-bold text-yellow-300">{ch4} ppm</p>
-                                    </div>
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-red-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">CO (Carbon Monoxide)</p>
-                                        <p className="text-2xl font-bold text-red-400">{co} ppm</p>
-                                    </div>
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-cyan-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">Humidity</p>
-                                        <p className="text-2xl font-bold text-cyan-400">{humidity}%</p>
-                                    </div>
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-orange-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">Env Temp</p>
-                                        <p className="text-2xl font-bold text-orange-400">{envTemp}°C</p>
-                                    </div>
-                                    <div className="p-3 bg-gray-800 rounded-xl border border-purple-500 hover:bg-gray-700 transition-colors">
-                                        <p className="text-sm text-gray-300">SpO2</p>
-                                        <p className="text-2xl font-bold text-purple-400">{spo2}%</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="text-gray-400 text-xs uppercase font-bold">Network</div>
+                            <div className="text-2xl font-mono font-bold text-green-600">Good</div>
                         </div>
-
-                        {/* 🧩 Pie Chart */}
-                        <div className="mt-6 bg-gray-900 border border-cyan-800 p-4 rounded-xl shadow animate-fade-in">
-                            <h2 className="text-center text-cyan-400 text-lg font-semibold mb-2">
-                                State Distribution
-                            </h2>
-                            <ResponsiveContainer width="100%" height={250}>
-                                <PieChart>
-                                    <Pie
-                                        data={pieData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={80}
-                                        innerRadius={50}
-                                        paddingAngle={5}
-                                        label={({ name, value }) => `${name}: ${value.toFixed(1)}%`}
-                                        isAnimationActive={true}
-                                        animationDuration={800}
-                                        animationEasing="ease-in-out"
-                                    >
-                                        {pieData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
-                                        ))}
-                                    </Pie>
-                                    <Legend iconType="circle" />
-                                </PieChart>
-                            </ResponsiveContainer>
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="text-gray-400 text-xs uppercase font-bold">Shift Time</div>
+                            <div className="text-2xl font-mono font-bold text-gray-800">4h:12m</div>
                         </div>
-                    </>
-                )
-            }
-
-            {/* 🚧 INDUSTRIAL SAFETY REPORT MODULE 🚧 */}
-            <div className="mt-8 mb-12 flex justify-center w-full">
-                <button
-                    onClick={async () => {
-                        if (showReportModal) {
-                            setShowReportModal(false);
-                            return;
-                        }
-                        if (!weeklyReport) {
-                            try {
-                                const res = await axios.get(`${API_URL}/generate_weekly_report`);
-                                setWeeklyReport(res.data);
-                                setShowReportModal(true);
-                            } catch (err) {
-                                console.error("Failed to fetch report", err);
-                                alert("Error generating report. Check console.");
-                            }
-                        } else {
-                            setShowReportModal(true);
-                        }
-                    }}
-                    // DESIGN: Heavy industrial button, looks like a physical push-plate
-                    className="group relative bg-yellow-500 border-4 border-black hover:bg-yellow-400 active:bg-yellow-600 active:translate-y-1 transition-all duration-75 p-0"
-                >
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')] opacity-10"></div>
-                    <div className="relative flex items-center gap-4 px-12 py-5">
-                        <div className="bg-black text-yellow-500 font-bold font-mono border-2 border-black px-3 py-1 text-2xl">
-                            ⚠
-                        </div>
-                        <div className="flex flex-col items-start">
-                            <span className="text-xs font-mono font-bold uppercase tracking-widest text-black/80">
-                                System Control
-                            </span>
-                            <span className="text-xl font-black uppercase tracking-tight text-black">
-                                Generate Safety Report
-                            </span>
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="text-gray-400 text-xs uppercase font-bold">Battery</div>
+                            <div className="text-2xl font-mono font-bold text-blue-600">88%</div>
                         </div>
                     </div>
-                </button>
-            </div>
+                </section>
+
+                {/* Charts Row */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <ChartCard title="Fatigue Probability (Live)" data={fatigueData} color="#ef4444" yDomain={[0, 100]} />
+                    <ChartCard title="Heart Rate (BPM)" data={heartRateData} color="#ec4899" yDomain={[60, 120]} />
+                    <ChartCard title="Body Temperature (°C)" data={tempData} color="#f59e0b" yDomain={[35, 40]} />
+                </section>
+
+                {/* Sensor Data Grid */}
+                <section>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Live Sensor Feed</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+
+                        {/* Metric Item Helper */}
+                        {([
+                            { label: "Heart Rate", val: heartRate, unit: "BPM", col: "text-pink-600" },
+                            { label: "Body Temp", val: bodyTemp, unit: "°C", col: parseFloat(bodyTemp) > 37.5 ? "text-red-600" : "text-orange-600" },
+                            { label: "SpO2", val: spo2, unit: "%", col: "text-blue-600" },
+                            { label: "Humidity", val: humidity, unit: "%", col: "text-cyan-600" },
+                            { label: "Env Temp", val: envTemp, unit: "°C", col: "text-yellow-600" },
+                            { label: "Methane", val: ch4, unit: "ppm", col: "text-purple-600" },
+                            { label: "CO Level", val: co, unit: "ppm", col: "text-red-600" },
+                        ]).map((m, i) => (
+                            <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                                <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">{m.label}</p>
+                                <p className={`text-2xl font-bold ${m.col}`}>{m.val}<span className="text-xs text-gray-400 ml-1 font-normal">{m.unit}</span></p>
+                            </div>
+                        ))}
+
+                    </div>
+                </section>
+
+            </main>
+
+            {/* Report Modal */}
+            {showReportModal && weeklyReport && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-gray-800 text-lg">Weekly Manager Report</h3>
+                            <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-gray-600">&times;</button>
+                        </div>
+                        <div className="p-6 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap font-sans text-sm text-gray-600 leading-relaxed">
+                                {weeklyReport.weekly_report}
+                            </pre>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+                            <button onClick={() => setShowReportModal(false)} className="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
+                            <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 rounded text-sm font-medium text-white hover:bg-blue-700">Print Report</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
