@@ -5,7 +5,6 @@ import {
   Area,
   XAxis,
   YAxis,
-  Tooltip,
   ResponsiveContainer,
   CartesianGrid
 } from "recharts";
@@ -152,8 +151,8 @@ export default function Dashboard() {
         {/* --- CENTER (Empty for 3D View) --- */}
         <div className="flex-grow flex items-center justify-between px-10 pointer-events-auto relative">
 
-          {/* Left Floating Box (ECG/HR) */}
-          <div className="bg-black/20 backdrop-blur-sm border border-cyan-800/30 p-2 rounded w-48 hidden md:block">
+          {/* Left Floating Box (ECG/HR) - Hidden on mobile */}
+          <div className="bg-black/20 backdrop-blur-sm border border-cyan-800/30 p-2 rounded w-48 hidden md:block opacity-50 hover:opacity-100 transition-opacity">
             <div className="text-xs text-cyan-700 uppercase mb-1">Heart Rhythm</div>
             <div className="h-10 border-b border-cyan-500/20 relative overflow-hidden">
               {/* Simulated ECG Line */}
@@ -172,108 +171,159 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* --- BOTTOM CONSOLE (The Dashboard) --- */}
-        <div className="bg-black/80 backdrop-blur-lg border-t-2 border-cyan-500/50 p-4 h-[35vh] grid grid-cols-12 gap-4 pointer-events-auto shadow-[0_-10px_50px_rgba(6,182,212,0.15)]">
+        {/* --- BOTTOM CONSOLE (PREMIUM CONTROL DECK) --- */}
+        <div className="absolute bottom-0 left-0 right-0 h-[40vh] bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-auto flex flex-col justify-end pb-6 px-10">
 
-          {/* PANEL 1: EKG / History */}
-          <div className="col-span-12 md:col-span-4 bg-black/40 border border-cyan-900/50 rounded-lg p-2 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 bg-cyan-900/50 text-[10px] px-2 py-0.5 text-cyan-200">HISTORICAL_LOG</div>
-            <h3 className="text-xs text-cyan-600 mb-1">CONFIDENCE TREND</h3>
-            <ResponsiveContainer width="100%" height="85%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorProb" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="time" hide />
-                <YAxis hide domain={[0, 100]} />
-                <Area type="monotone" dataKey="probability" stroke="#22d3ee" fillOpacity={1} fill="url(#colorProb)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Glass Container */}
+          <div className="w-full h-full max-h-[300px] backdrop-blur-xl bg-gray-900/60 border border-cyan-500/30 rounded-t-3xl shadow-[0_-10px_80px_rgba(8,145,178,0.2)] p-4 grid grid-cols-12 gap-4 relative overflow-hidden ring-1 ring-white/10">
 
-          {/* PANEL 2: RAW DATA & GAUGES */}
-          <div className="col-span-12 md:col-span-4 flex flex-col gap-2">
-            {/* Top: Main Prediction */}
-            <div className="flex-grow bg-black/40 border border-cyan-900/50 rounded-lg flex items-center justify-center relative shadow-[inset_0_0_20px_rgba(6,182,212,0.1)]">
-              <div className="text-center">
-                <p className="text-xs text-cyan-600 tracking-widest mb-2">SYSTEM ANALYSIS</p>
-                <div className={`text-5xl font-black tracking-tighter ${prediction === 'Fatigue' ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,1)]' : prediction === 'Normal' ? 'text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]' : 'text-yellow-400'}`}>
-                  {prediction.toUpperCase()}
+            {/* Decorative Top Line */}
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-[2px] bg-cyan-500 shadow-[0_0_10px_cyan]"></div>
+
+            {/* --- LEFT PANEL: BIOMETRICS & WAVES --- */}
+            <div className="col-span-12 md:col-span-4 bg-black/40 rounded-xl border border-white/5 p-4 flex flex-col relative group overflow-hidden">
+              <div className="absolute top-2 left-3 text-[10px] text-cyan-500/70 tracking-[0.2em] font-bold">BIO_TELEMETRY</div>
+
+              {/* Heart Rate Section */}
+              <div className="mt-6 flex items-center justify-between">
+                <div className="relative">
+                  <span className={`text-5xl font-black tracking-tighter ${parseInt(heartRate) < 50 ? 'text-red-500' : 'text-white'}`}>{heartRate}</span>
+                  <span className="text-[10px] text-gray-400 absolute -top-1 -right-8">BPM</span>
                 </div>
-                <p className="text-xl text-white font-bold mt-1">{probability}% <span className="text-xs text-gray-500 font-normal">CONFIDENCE</span></p>
+                {/* HR Waveform Visual */}
+                <div className="flex-grow ml-4 h-12 border-b border-cyan-500/20 relative overflow-hidden">
+                  {/* CSS Wave Mock */}
+                  <div className="w-full h-full flex items-end justify-around">
+                    {[...Array(10)].map((_, i) => (
+                      <div key={i} className="w-1 bg-cyan-500 animate-pulse" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.1}s` }}></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* SpO2 & Body Temp Row */}
+              <div className="mt-auto grid grid-cols-2 gap-4">
+                <div className="bg-white/5 p-3 rounded border-l-2 border-green-500 flex flex-col justify-between">
+                  <div className="text-[10px] text-gray-400 uppercase">O2 Saturation</div>
+                  <div className="text-2xl font-bold text-green-400">{spo2}<span className="text-xs">%</span></div>
+                </div>
+                <div className="bg-white/5 p-3 rounded border-l-2 border-yellow-500 flex flex-col justify-between">
+                  <div className="text-[10px] text-gray-400 uppercase">Core Temp</div>
+                  <div className={`text-2xl font-bold ${parseFloat(bodyTemp) > 37.5 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>{bodyTemp}<span className="text-xs">°C</span></div>
+                </div>
               </div>
             </div>
 
-            {/* Bottom: Raw Scores Bar */}
-            <div className="h-16 bg-black/40 border border-cyan-900/50 rounded-lg p-2 flex items-center justify-around text-center">
-              <div>
-                <div className="text-[10px] text-gray-500">NORM</div>
-                <div className="text-green-400 font-bold">{(rawScores[0] * 100).toFixed(0)}</div>
+
+            {/* --- CENTER PANEL: PREDICTION ENGINE --- */}
+            <div className="col-span-12 md:col-span-4 flex flex-col relative">
+              {/* Main Hexagon/Circle Display Logic */}
+              <div className="flex-grow bg-gradient-to-b from-cyan-900/10 to-black/60 rounded-xl border border-cyan-500/30 flex flex-col items-center justify-center relative shadow-[inset_0_0_50px_rgba(8,145,178,0.1)]">
+
+                {/* Status Ring */}
+                <div className={`w-36 h-36 rounded-full border-4 flex items-center justify-center relative ${prediction === 'Fatigue' ? 'border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.4)]' : prediction === 'Normal' ? 'border-green-500/50 shadow-[0_0_50px_rgba(34,211,238,0.2)]' : 'border-yellow-500'} transition-all duration-1000 group`}>
+                  {/* Inner Spinners */}
+                  <div className="absolute inset-2 rounded-full border-t-2 border-white/50 animate-spin" style={{ animationDuration: '3s' }}></div>
+                  <div className="absolute inset-4 rounded-full border-b-2 border-white/30 animate-spin" style={{ animationDuration: '5s', animationDirection: 'reverse' }}></div>
+
+                  <div className="text-center z-10">
+                    <div className="text-[9px] text-white/50 tracking-widest uppercase mb-1">Status</div>
+                    <div className={`text-2xl font-black italic tracking-tighter ${prediction === 'Fatigue' ? 'text-red-500' : prediction === 'Normal' ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {prediction.toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confidence Metric */}
+                <div className="mt-4 text-center">
+                  <div className="text-[9px] text-cyan-600 uppercase tracking-widest mb-1">AI_CONFIDENCE_LEVEL</div>
+                  <div className="text-4xl font-bold text-white tracking-widest font-mono">{probability}%</div>
+                </div>
+
+                {/* Report Button */}
+                <button
+                  onClick={fetchReport}
+                  className="absolute bottom-4 px-8 py-1.5 bg-cyan-900/30 hover:bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 text-[10px] font-bold rounded-sm transition-all uppercase tracking-[0.2em] backdrop-blur hover:shadow-[0_0_15px_cyan]"
+                >
+                  Open_Manager_Log
+                </button>
               </div>
-              <div>
-                <div className="text-[10px] text-gray-500">STRS</div>
-                <div className="text-yellow-400 font-bold">{(rawScores[1] * 100).toFixed(0)}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-gray-500">FAIL</div>
-                <div className="text-red-400 font-bold">{(rawScores[2] * 100).toFixed(0)}</div>
-              </div>
-              <div className="w-px h-full bg-gray-700"></div>
-              <button
-                onClick={fetchReport}
-                className="bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 px-4 py-1 text-xs font-bold rounded hover:shadow-[0_0_10px_rgba(234,179,8,0.5)] transition-all uppercase tracking-wider"
-              >
-                Report
-              </button>
             </div>
+
+
+            {/* --- RIGHT PANEL: ENV SENSORS & CHARTS --- */}
+            <div className="col-span-12 md:col-span-4 bg-black/40 rounded-xl border border-white/5 p-4 flex flex-col relative">
+              <div className="absolute top-2 right-3 text-[10px] text-purple-400/70 tracking-[0.2em] font-bold">ENV_HAZARDS</div>
+
+              {/* Environmental Grid */}
+              <div className="grid grid-cols-3 gap-2 mt-6">
+                {/* Gas 1 */}
+                <div className="text-center flex flex-col items-center">
+                  <Gauge value={Math.min(100, (parseFloat(ch4) / 5) * 100)} color="#a855f7" />
+                  <div className="text-[9px] text-gray-500 mt-2">METHANE</div>
+                  <div className="text-xs font-bold text-purple-400">{ch4}</div>
+                </div>
+                {/* Gas 2 */}
+                <div className="text-center flex flex-col items-center">
+                  <Gauge value={Math.min(100, (parseFloat(co) / 10) * 100)} color="#ef4444" />
+                  <div className="text-[9px] text-gray-500 mt-2">CO LEVEL</div>
+                  <div className="text-xs font-bold text-red-500">{co}</div>
+                </div>
+                {/* Humidity */}
+                <div className="text-center flex flex-col items-center">
+                  <Gauge value={parseFloat(humidity)} color="#3b82f6" />
+                  <div className="text-[9px] text-gray-500 mt-2">HUMIDITY</div>
+                  <div className="text-xs font-bold text-blue-400">{humidity}%</div>
+                </div>
+              </div>
+
+              {/* Mini Graph at bottom */}
+              <div className="mt-auto h-20 w-full opacity-60 relative">
+                <div className="absolute top-0 left-0 text-[9px] text-gray-600">FATIGUE_TREND (1H)</div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorProb" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="probability" stroke="#8884d8" fillOpacity={1} fill="url(#colorProb)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
           </div>
-
-          {/* PANEL 3: ENVIRONMENTAL SENSORS */}
-          <div className="col-span-12 md:col-span-4 bg-black/40 border border-cyan-900/50 rounded-lg p-3 grid grid-cols-2 gap-2 overflow-y-auto">
-            <div className="absolute top-0 right-0 bg-cyan-900/50 text-[10px] px-2 py-0.5 text-cyan-200 rounded-bl">ENV_SENSORS</div>
-
-            <div className="col-span-2 text-xs text-cyan-700 font-bold uppercase border-b border-cyan-900/30 pb-1 mb-1">Atmospheric Data</div>
-
-            <SensorItem label="CH4 (Methane)" value={ch4} unit="ppm" color="text-purple-400" />
-            <SensorItem label="CO Level" value={co} unit="ppm" color="text-red-400" />
-            <SensorItem label="Humidity" value={humidity} unit="%" color="text-blue-400" />
-            <SensorItem label="Amb Temp" value={envTemp} unit="°C" color="text-orange-400" />
-            <SensorItem label="SpO2" value={spo2} unit="%" color="text-green-400" />
-          </div>
-
         </div>
 
         {/* Manager Report Modal - Simplified styling to match HUD */}
         {showReportModal && (
-          <div className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-            <div className="bg-black border border-cyan-500 p-8 max-w-4xl w-full max-h-screen overflow-auto shadow-[0_0_50px_rgba(6,182,212,0.3)] relative">
-              <div className="flex justify-between items-center mb-6 border-b border-cyan-900 pb-4 sticky top-0 bg-black z-10">
+          <div className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-md">
+            <div className="bg-black/80 border border-cyan-500 p-8 max-w-4xl w-full max-h-screen overflow-auto shadow-[0_0_50px_rgba(6,182,212,0.3)] relative rounded-3xl">
+              <div className="flex justify-between items-center mb-6 border-b border-cyan-900 pb-4 sticky top-0 bg-transparent z-10">
                 <h2 className="text-2xl text-cyan-400 font-bold tracking-widest flex items-center gap-2">
                   <span className="text-3xl">📊</span> WEEKLY REPORT
                 </h2>
-                <button onClick={() => setShowReportModal(false)} className="text-red-500 border border-red-500 px-4 py-1 hover:bg-red-900/50 tracking-widest">CLOSE_TERMINAL</button>
+                <button onClick={() => setShowReportModal(false)} className="text-red-500 border border-red-500 px-4 py-1 hover:bg-red-900/50 tracking-widest uppercase text-xs font-bold">Close Terminal</button>
               </div>
               {weeklyReport ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="border border-cyan-800 p-4 text-center">
-                      <div className="text-gray-500 text-xs uppercase">Risk</div>
-                      <div className={`text-2xl font-bold ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' : 'text-green-500'}`}>{weeklyReport.risk_level}</div>
+                    <div className="border border-cyan-800 bg-cyan-900/10 p-4 text-center rounded-xl">
+                      <div className="text-gray-500 text-xs uppercase mb-2">Risk Level</div>
+                      <div className={`text-4xl font-black ${weeklyReport.risk_level === 'HIGH' ? 'text-red-500' : 'text-green-500'}`}>{weeklyReport.risk_level}</div>
                     </div>
-                    <div className="border border-cyan-800 p-4 text-center">
-                      <div className="text-gray-500 text-xs uppercase">Est. Fatigue</div>
-                      <div className="text-2xl font-bold text-white">{weeklyReport.predicted_fatigue_day8} min</div>
+                    <div className="border border-cyan-800 bg-cyan-900/10 p-4 text-center rounded-xl">
+                      <div className="text-gray-500 text-xs uppercase mb-2">Est. Fatigue</div>
+                      <div className="text-3xl font-bold text-white">{weeklyReport.predicted_fatigue_day8} <span className="text-sm text-gray-400">min</span></div>
                     </div>
-                    <div className="border border-cyan-800 p-4 text-center">
-                      <div className="text-gray-500 text-xs uppercase">Shift</div>
-                      <div className="text-2xl font-bold text-white">{weeklyReport.recommended_shift}</div>
+                    <div className="border border-cyan-800 bg-cyan-900/10 p-4 text-center rounded-xl">
+                      <div className="text-gray-500 text-xs uppercase mb-2">Rec. Shift</div>
+                      <div className="text-3xl font-bold text-white">{weeklyReport.recommended_shift}</div>
                     </div>
                   </div>
-                  <div className="text-xs text-cyan-100 font-mono whitespace-pre-wrap leading-relaxed border border-gray-800 p-4 bg-gray-900/50">
+                  <div className="text-xs text-cyan-100 font-mono whitespace-pre-wrap leading-relaxed border border-gray-800 p-6 bg-black rounded-xl shadow-inner">
                     {weeklyReport.weekly_report}
                   </div>
                 </>
@@ -287,12 +337,41 @@ export default function Dashboard() {
   );
 }
 
-// Helper for sensors
-function SensorItem({ label, value, unit, color }) {
+// ----------------------------------------------------------------------
+// 🔘 CIRCULAR GAUGE COMPONENT (SVG-Based)
+// ----------------------------------------------------------------------
+function Gauge({ value, color = "#06b6d4" }) {
+  const radius = 25;
+  const stroke = 4;
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - ((parseFloat(value) || 0) / 100) * circumference;
+
   return (
-    <div className="bg-black/20 p-2 rounded border border-white/5 flex flex-col justify-center hover:bg-white/5 transition-colors">
-      <span className="text-[10px] text-gray-500 uppercase">{label}</span>
-      <span className={`text-xl font-mono font-bold ${color}`}>{value}<span className="text-xs text-gray-600 ml-1">{unit}</span></span>
+    <div className="relative flex items-center justify-center">
+      <svg height={radius * 2} width={radius * 2} className="rotate-[-90deg]">
+        {/* Background Ring */}
+        <circle
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={stroke}
+          fill="transparent"
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+        />
+        {/* Progress Ring */}
+        <circle
+          stroke={color}
+          strokeWidth={stroke}
+          strokeDasharray={circumference + ' ' + circumference}
+          style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+          strokeLinecap="round"
+          fill="transparent"
+          r={normalizedRadius}
+          cx={radius}
+          cy={radius}
+        />
+      </svg>
     </div>
-  )
+  );
 }
