@@ -63,8 +63,8 @@ function Register() {
         </div>
 
         <input
-          type="text"
-          placeholder="User ID"
+          type="email"
+          placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
