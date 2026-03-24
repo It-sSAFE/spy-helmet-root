@@ -134,20 +134,28 @@ async def submit_sensor_data(data: SensorInput, request: Request):
         # Add to buffer
         sequence = add_reading(reading)
 
+        # ALWAYS push to Redis for immediate historical tracking before buffering!
+        payload = data.dict()
+        
         if sequence is None:
+            payload["fatigue_state"] = "Collecting" # No prediction yet
+            try:
+                redis_client.lpush("helmet_data_queue", json.dumps(payload))
+            except Exception as redis_error:
+                print(f"Redis Queue failed: {redis_error}", flush=True)
+                
             return {
                 "status": "collecting",
                 "message": f"Waiting for 100 readings from ESP32... (Packet {data.Packet_no})"
             }
 
-        # Predict fatigue level
+        # 100 readings reached: Predict fatigue level!
         result = predict_fatigue(sequence)
 
         # Log reading with helmet ID (Skipped Writing to DB for now per request)
         log_data(reading, result["prediction"], data.helmet_ID) 
-        
-        # PUSH to Redis Queue for massive historical scale 🚀
-        payload = data.dict()
+
+        # Push the finalized reading with AI Prediction 🚀
         payload["fatigue_state"] = result["prediction"]
         try:
             redis_client.lpush("helmet_data_queue", json.dumps(payload))
