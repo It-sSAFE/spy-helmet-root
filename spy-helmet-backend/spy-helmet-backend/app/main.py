@@ -212,7 +212,7 @@ async def get_weekly_report():
         raise HTTPException(status_code=500, detail=str(e))
 
 # ✅ Historical Data Retrieval Routes
-@app.get("/api/historical/sessions/{helmet_code}")
+@app.get("/historical/sessions/{helmet_code}")
 def get_sessions(helmet_code: str, db: Session = Depends(get_db)):
     helmet = db.query(Helmet).filter(Helmet.helmet_code == helmet_code).first()
     if not helmet:
@@ -221,7 +221,7 @@ def get_sessions(helmet_code: str, db: Session = Depends(get_db)):
     sessions = db.query(WorkSession).filter(WorkSession.helmet_id == helmet.id).order_by(WorkSession.start_time.desc()).all()
     return sessions
 
-@app.get("/api/historical/readings/{session_id}")
+@app.get("/historical/readings/{session_id}")
 def get_session_readings(session_id: str, db: Session = Depends(get_db)):
     readings = db.query(Reading).filter(Reading.session_id == session_id).order_by(Reading.inserted_at.asc()).all()
     return readings
