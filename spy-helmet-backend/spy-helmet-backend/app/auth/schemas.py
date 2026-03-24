@@ -1,16 +1,16 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List, Optional
 
 # Input schema for registration
 class UserCreate(BaseModel):
     company_name: str
-    email: EmailStr
+    username: str
     password: str
     role: str
 
 # Input schema for login
 class UserLogin(BaseModel):
-    email: str
+    username: str
     password: str
     role: str
 
@@ -18,7 +18,6 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     id: str
     username: str
-    email: EmailStr
 
     class Config:
         from_attributes = True

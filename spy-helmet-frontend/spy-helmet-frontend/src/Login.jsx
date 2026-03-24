@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [helmetId, setHelmetId] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [role, setRole] = useState("readOnly");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -17,7 +17,7 @@ function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email,
+          username: username,
           password: password,
           role: role
         }),
@@ -27,7 +27,7 @@ function Login() {
 
       if (res.ok) {
         localStorage.setItem("token", data.access_token);
-        localStorage.setItem("email", email);
+        localStorage.setItem("username", username);
         setMessage("✅ Login successful!");
 
         /* 
@@ -71,8 +71,8 @@ function Login() {
         <input
           type="text"
           placeholder="User ID"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           className="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
         />
 
