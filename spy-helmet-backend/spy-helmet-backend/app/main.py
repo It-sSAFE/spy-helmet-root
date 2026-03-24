@@ -1,4 +1,7 @@
 import os
+import json
+import redis
+
 # Fix CUDA errors on CPU-only machines
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -18,6 +21,9 @@ from app.auth.routes import router as auth_router
 # Import Predictor (TensorFlow) LAST to avoid Segfaults
 from app.core.predictor import predict_fatigue
 
+# Connect to Redis Message Broker
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.from_url(REDIS_URL)
 
 app = FastAPI(
     title="SPY Helmet Fatigue API",
@@ -135,6 +141,14 @@ async def submit_sensor_data(data: SensorInput, request: Request):
 
         # Log reading with helmet ID (Skipped Writing to DB for now per request)
         log_data(reading, result["prediction"], data.helmet_ID) 
+        
+        # PUSH to Redis Queue for massive historical scale 🚀
+        payload = data.dict()
+        payload["fatigue_state"] = result["prediction"]
+        try:
+            redis_client.lpush("helmet_data_queue", json.dumps(payload))
+        except Exception as redis_error:
+            print(f"Redis Queue failed: {redis_error}", flush=True)
 
         # Save for frontend
         latest_prediction = {

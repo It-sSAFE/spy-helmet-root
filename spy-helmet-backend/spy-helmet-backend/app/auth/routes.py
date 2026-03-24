@@ -12,10 +12,10 @@ def register_user(user: schemas.UserCreate):
     cur = conn.cursor()
 
     try:
-        # 1. Check if Email already exists
-        cur.execute("SELECT 1 FROM companies WHERE email = %s", (user.email,))
+        # 1. Check if Username already exists
+        cur.execute("SELECT 1 FROM companies WHERE username = %s", (user.username,))
         if cur.fetchone():
-            raise HTTPException(status_code=400, detail="Email already in use")
+            raise HTTPException(status_code=400, detail="Username already in use")
 
         # 2. Check if Company Name already exists
         cur.execute("SELECT 1 FROM companies WHERE company_name = %s", (user.company_name,))
@@ -32,7 +32,7 @@ def register_user(user: schemas.UserCreate):
             INSERT INTO companies (
                 id, 
                 company_name, 
-                email, 
+                username, 
                 password_hash, 
                 created_at, 
                 is_active, 
@@ -42,7 +42,7 @@ def register_user(user: schemas.UserCreate):
             RETURNING id;
         """, (
             user.company_name,
-            user.email,
+            user.username,
             hashed_pw,
             is_admin
         ))
@@ -69,14 +69,14 @@ def login_user(user_data: schemas.UserLogin):
     cur = conn.cursor()
     
     try:
-        # Check against 'email'
+        # Check against 'username'
         cur.execute("""
-            SELECT id, company_name, email, password_hash 
+            SELECT id, company_name, username, password_hash 
             FROM companies 
-            WHERE email = %s
-        """, (user_data.email,))
+            WHERE username = %s
+        """, (user_data.username,))
         
-        user = cur.fetchone() # Returns tuple: (id, name, email, hash)
+        user = cur.fetchone() # Returns tuple: (id, name, username, hash)
 
         # Verify User exists and Password matches
         # user[3] is password_hash based on the SELECT order above

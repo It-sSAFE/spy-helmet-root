@@ -5,7 +5,6 @@ function Register() {
   const [comName, setComName] = useState("");
   const [role, setRole] = useState("readOnly");
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
@@ -18,7 +17,7 @@ function Register() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           company_name: comName,
-          email: email,
+          username: username,
           password: password,
           role: role
         }),
@@ -63,10 +62,10 @@ function Register() {
         </div>
 
         <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           className="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
         />
 

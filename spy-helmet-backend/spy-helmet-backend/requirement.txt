@@ -31,4 +31,4 @@ requests
 
 # 🛠️ Utilities
 python-dotenv
-
+redis
