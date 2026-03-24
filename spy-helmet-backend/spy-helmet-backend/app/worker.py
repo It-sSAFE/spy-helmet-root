@@ -5,7 +5,7 @@ import redis
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
-from app.db.models import WorkSession, Reading, Helmet
+from app.db.models import WorkSession, Reading, Helmet, Company
 
 print("🚀 Historical Data Worker Starting up...", flush=True)
 
@@ -34,9 +34,19 @@ def process_reading(payload: dict):
     # Check if Helmet exists
     helmet = db.query(Helmet).filter(Helmet.helmet_code == helmet_code).first()
     if not helmet:
-        # Note: If helmets are not pre-registered in the DB by the admin, 
-        # this will gracefully skip. You must register helmets manually first for production!
-        return
+        # SECURITY OVERRIDE: Auto-create missing helmets on the fly
+        default_company = db.query(Company).filter(Company.username == "system_auto").first()
+        if not default_company:
+            default_company = Company(username="system_auto", password_hash="auto_generated")
+            db.add(default_company)
+            db.commit()
+            db.refresh(default_company)
+            
+        helmet = Helmet(helmet_code=helmet_code, company_id=default_company.id)
+        db.add(helmet)
+        db.commit()
+        db.refresh(helmet)
+        print(f"🌟 Auto-registered missing Helmet {helmet_code}", flush=True)
 
     # Check for Active WorkSession
     active_session = db.query(WorkSession).filter(
