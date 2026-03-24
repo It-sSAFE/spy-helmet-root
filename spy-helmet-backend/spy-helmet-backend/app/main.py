@@ -7,10 +7,14 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List
+
+from sqlalchemy.orm import Session
+from app.db.database import get_db
+from app.db.models import Helmet, WorkSession, Reading
 
 from app.core.buffer import add_reading
 from app.core.buffer import return_progress
@@ -198,6 +202,21 @@ async def get_weekly_report():
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ✅ Historical Data Retrieval Routes
+@app.get("/api/historical/sessions/{helmet_code}")
+def get_sessions(helmet_code: str, db: Session = Depends(get_db)):
+    helmet = db.query(Helmet).filter(Helmet.helmet_code == helmet_code).first()
+    if not helmet:
+        raise HTTPException(status_code=404, detail="Helmet not found in database. Have you registered it?")
+    
+    sessions = db.query(WorkSession).filter(WorkSession.helmet_id == helmet.id).order_by(WorkSession.start_time.desc()).all()
+    return sessions
+
+@app.get("/api/historical/readings/{session_id}")
+def get_session_readings(session_id: str, db: Session = Depends(get_db)):
+    readings = db.query(Reading).filter(Reading.session_id == session_id).order_by(Reading.inserted_at.asc()).all()
+    return readings
 
 # ✅ Mount authentication routes
 app.include_router(auth_router)
