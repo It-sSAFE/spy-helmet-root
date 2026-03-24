@@ -58,7 +58,7 @@ services:
       context: ./spy-helmet-backend/spy-helmet-backend
       dockerfile: Dockerfile
     container_name: helmet-data-worker
-    command: python app/worker.py
+    command: python -m app.worker
     env_file:
       - .env
     environment:
