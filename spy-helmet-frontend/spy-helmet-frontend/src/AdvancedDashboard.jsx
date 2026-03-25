@@ -42,6 +42,18 @@ export default function AdvancedDashboard() {
   // Database Tab State
   const [dbData, setDbData] = useState([]);
   const [isDbLoading, setIsDbLoading] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [sessionReadings, setSessionReadings] = useState([]);
+  const [isReadingsLoading, setIsReadingsLoading] = useState(false);
+
+  const handleSessionClick = (fullId) => {
+    setSelectedSessionId(fullId);
+    setIsReadingsLoading(true);
+    axios.get(`${API_URL}/historical/readings/${fullId}`)
+      .then(res => setSessionReadings(res.data))
+      .catch(err => console.error("Failed to fetch readings:", err))
+      .finally(() => setIsReadingsLoading(false));
+  };
 
   // Reports Tab State
   const [reportData, setReportData] = useState(null);
@@ -313,6 +325,61 @@ export default function AdvancedDashboard() {
     <div className="min-h-screen bg-[#0a1128] text-slate-300 font-sans p-4 md:p-6 overflow-x-hidden">
 
       {/* 🔴 OVERLAYS for Critical Events */}
+
+      {/* Drilldown Modal */}
+      {selectedSessionId && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-[#0a1128] border border-cyan-500/50 rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col shadow-[0_0_30px_rgba(6,182,212,0.2)] overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-[#0d1633]">
+              <h2 className="text-lg font-bold text-cyan-400 font-sans tracking-widest flex items-center gap-2">
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                SESSION TELEMETRY ARCHIVE
+              </h2>
+              <button onClick={() => setSelectedSessionId(null)} className="text-slate-400 hover:text-white px-3 py-1 bg-slate-800 hover:bg-red-500/50 rounded transition-colors text-xl font-bold">&times;</button>
+            </div>
+            <div className="p-4 flex-1 overflow-auto custom-scrollbar bg-slate-900/50">
+              {isReadingsLoading ? (
+                <div className="flex justify-center flex-col items-center h-48">
+                  <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-xs text-cyan-500 mt-4 tracking-widest uppercase animate-pulse font-bold">Querying AI Matrix...</span>
+                </div>
+              ) : sessionReadings.length === 0 ? (
+                <div className="flex justify-center items-center h-48 text-slate-500 font-bold uppercase tracking-widest text-sm">No Telemetry Recorded</div>
+              ) : (
+                <table className="w-full text-left font-sans text-xs whitespace-nowrap">
+                  <thead className="text-slate-400 uppercase tracking-widest border-b border-slate-700 bg-slate-900 sticky top-0 shadow-md">
+                    <tr>
+                      <th className="py-3 px-4 font-bold">Timestamp</th>
+                      <th className="py-3 px-4 font-bold">HR (bpm)</th>
+                      <th className="py-3 px-4 font-bold">SpO2 (%)</th>
+                      <th className="py-3 px-4 font-bold">Temp (°C)</th>
+                      <th className="py-3 px-4 font-bold">CO (ppm)</th>
+                      <th className="py-3 px-4 font-bold">CH4 (ppm)</th>
+                      <th className="py-3 px-4 font-bold">AI State</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {sessionReadings.map((r, i) => (
+                      <tr key={i} className="hover:bg-slate-800/80 transition-colors">
+                        <td className="py-2 px-4 text-slate-500 font-semibold">{new Date(r.inserted_at).toLocaleTimeString()}</td>
+                        <td className={`py-2 px-4 font-bold ${r.hr > 100 || r.hr < 60 ? 'text-yellow-400' : 'text-emerald-400'}`}>{r.hr}</td>
+                        <td className={`py-2 px-4 font-bold ${r.spo2 < 95 ? 'text-yellow-400' : 'text-emerald-400'}`}>{r.spo2}%</td>
+                        <td className={`py-2 px-4 font-bold ${r.temperature > 37.5 ? 'text-orange-400' : 'text-slate-300'}`}>{r.temperature}°</td>
+                        <td className="py-2 px-4 text-slate-300">{r.co_ppm}</td>
+                        <td className="py-2 px-4 text-slate-300">{r.ch4_ppm}</td>
+                        <td className={`py-2 px-4 font-bold ${r.fatigue_state === 'Fatigue' ? 'text-red-500' : r.fatigue_state === 'Stressed' ? 'text-yellow-500' : r.fatigue_state === 'Collecting' ? 'text-slate-500' : 'text-emerald-500'}`}>
+                          {r.fatigue_state.toUpperCase()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {fatigueAlert && (
         <div className="fixed inset-0 bg-red-900/90 z-50 flex items-center justify-center animate-pulse backdrop-blur-md transition-all duration-500 ease-in-out pointer-events-none">
           <div className="text-center">
@@ -393,8 +460,8 @@ export default function AdvancedDashboard() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-6 py-2 rounded-t-lg font-bold text-sm tracking-wider uppercase transition-all ${activeTab === tab
-                ? "bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-400"
-                : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+              ? "bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-400"
+              : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
               }`}
           >
             {tab}
@@ -446,7 +513,7 @@ export default function AdvancedDashboard() {
             <div className="p-8 rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur-md flex flex-col justify-center items-center text-center">
               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Neural Net Assessment</h2>
               <div className={`text-4xl lg:text-5xl font-black font-sans hover:font-bold uppercase tracking-widest mb-2 ${prediction === "Normal" ? "text-emerald-400" :
-                  prediction === "Stressed" ? "text-yellow-400" : "text-red-500 animate-pulse"
+                prediction === "Stressed" ? "text-yellow-400" : "text-red-500 animate-pulse"
                 }`}>
                 {prediction}
               </div>
@@ -781,14 +848,14 @@ export default function AdvancedDashboard() {
             <div className="space-y-3">
               {alertLog.map((alert) => (
                 <div key={alert.id} className={`flex items-start gap-4 p-4 rounded-lg border ${alert.severity === 'critical' ? 'bg-red-500/10 border-red-500/30' :
-                    alert.severity === 'high' ? 'bg-yellow-500/10 border-yellow-500/30' :
-                      'bg-blue-500/10 border-blue-500/30'
+                  alert.severity === 'high' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                    'bg-blue-500/10 border-blue-500/30'
                   }`}>
                   <div className="text-sm font-sans font-semibold text-slate-400 pt-1 shrink-0 w-24">{alert.time}</div>
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">{alert.type}</span>
                     <span className={`text-sm font-medium ${alert.severity === 'critical' ? 'text-red-400' :
-                        alert.severity === 'high' ? 'text-yellow-400' : 'text-blue-400'
+                      alert.severity === 'high' ? 'text-yellow-400' : 'text-blue-400'
                       }`}>{alert.message}</span>
                   </div>
                 </div>
@@ -931,8 +998,8 @@ export default function AdvancedDashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
                   {dbData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="px-6 py-4 text-cyan-400">{row.id}</td>
+                    <tr key={idx} className="hover:bg-slate-800/60 transition-colors cursor-pointer group" onClick={() => handleSessionClick(row.full_id)}>
+                      <td className="px-6 py-4 text-cyan-400 group-hover:text-cyan-300 font-bold">{row.id}</td>
                       <td className="px-6 py-4 text-slate-300">{row.helmet_id}</td>
                       <td className="px-6 py-4 text-slate-400 text-xs">{row.start_time}</td>
                       <td className="px-6 py-4 text-slate-300">{row.duration}</td>

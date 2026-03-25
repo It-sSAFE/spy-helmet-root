@@ -254,6 +254,7 @@ def get_all_sessions(db: Session = Depends(get_db)):
 
         results.append({
             "id": f"SESS-{str(session.id).split('-')[0].upper()}",
+            "full_id": str(session.id),
             "helmet_id": helmet_code,
             "start_time": start_time_str,
             "duration": duration_str,
