@@ -11,10 +11,10 @@ def log_data(reading, prediction, helmet_id=None):
         print("⚠️ No helmet_id provided. Skipping DB log.")
         return
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
     try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
         hr_val = reading[0]
         temp_val = reading[1]
 
@@ -26,10 +26,8 @@ def log_data(reading, prediction, helmet_id=None):
         
         conn.commit()
         print(f"✅ Saved reading for Helmet {helmet_id}: HR={hr_val}, Temp={temp_val}")
-
-    except Exception as e:
-        conn.rollback()
-        print(f"❌ Failed to log to DB: {e}")
-    finally:
         cur.close()
         conn.close()
+
+    except Exception as e:
+        print(f"⚠️ DB log skipped (PostgreSQL unavailable): {e}")

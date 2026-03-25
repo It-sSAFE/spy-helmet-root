@@ -31,13 +31,13 @@ print(f"📡 Sending to: {API_URL}", flush=True)
 
 def generate_sensor_reading(packet_num):
     # Simulated physiological data (Normal Range)
-    hr = int(random.uniform(70, 95))
-    body_temp = round(random.uniform(36.5, 37.2), 2)
+    hr = int(random.uniform(90, 125))
+    body_temp = round(random.uniform(36.5, 37.0), 2)
     spo2 = int(random.uniform(96, 99))
     
     # Simulated environmental data
-    env_temp = round(random.uniform(25.0, 30.0), 2)
-    humidity = round(random.uniform(40.0, 60.0), 2)
+    env_temp = round(random.uniform(27.0, 30.0), 2)
+    humidity = round(random.uniform(90.0, 99.0), 2)
     
     # Simulated gas readings (Safe levels)
     ch4_ppm = round(random.uniform(0.0, 5.0), 2) # Low CH4
@@ -75,4 +75,4 @@ while packet_counter < MAX_PACKETS:
         # If we can't connect, don't spam. Wait a bit.
         time.sleep(2)
     
-    time.sleep(0.05) # Speed up for testing
+    time.sleep(0.5) # Speed up for testing
