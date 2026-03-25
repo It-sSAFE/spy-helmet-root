@@ -3,6 +3,7 @@ import LandingPage from "./LandingPage";
 import Login from "./Login";
 import Register from "./Register";
 import Dashboard from "./Dashboard";
+import AdvancedDashboard from "./AdvancedDashboard";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/advanced" element={<AdvancedDashboard />} />
       </Routes>
     </BrowserRouter>
   );

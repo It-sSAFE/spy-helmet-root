@@ -42,6 +42,14 @@ function LandingPage() {
             <span className="absolute inset-0 w-full h-full border-2 border-green-500 rounded-xl"></span>
             <span className="relative text-white">Register</span>
           </button>
+          <button
+            onClick={() => navigate("/advanced")}
+            className="relative px-8 py-3 text-lg font-semibold rounded-xl overflow-hidden group shadow-[0_0_15px_rgba(234,179,8,0.4)]"
+          >
+            <span className="absolute inset-0 w-full h-full transition duration-300 ease-out transform translate-x-full bg-yellow-500 group-hover:translate-x-0"></span>
+            <span className="absolute inset-0 w-full h-full border-2 border-yellow-500 rounded-xl"></span>
+            <span className="relative text-white">Advanced View</span>
+          </button>
         </div>
       </div>
     </div>
