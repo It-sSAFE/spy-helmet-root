@@ -400,11 +400,7 @@ export default function AdvancedDashboard() {
           </div>
         </div>
       )}
-      {isDataStale && (
-        <div className="fixed top-0 left-0 w-full bg-yellow-600 text-black font-bold text-center py-2 z-50 shadow-[0_0_10px_rgba(202,138,4,1)]">
-          WARNING: TELEMETRY DISCONNECTED. STALE DATA.
-        </div>
-      )}
+      {/* Stale data warning removed per request */}
 
       {/* 🎯 HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-center mb-8 bg-[#0d1633]/80 p-6 rounded-2xl border border-slate-800 shadow-lg backdrop-blur-md">

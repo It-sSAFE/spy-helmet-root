@@ -196,7 +196,7 @@ export default function Dashboard() {
           <div className="fixed inset-0 flex items-center justify-center bg-yellow-700/20 backdrop-blur-sm border border-yellow-400 shadow-[0_0_25px_5px_rgba(255,255,0,0.5)] animate-pulse z-40">
             <div className="text-center">
               <h1 className="text-yellow-300 text-5xl font-extrabold tracking-wide animate-bounce drop-shadow-md">
-                WEAR THE HELMET
+                WEAR THE HELMET PROPERLY
               </h1>
             </div>
           </div>
