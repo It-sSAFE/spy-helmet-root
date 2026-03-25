@@ -212,6 +212,58 @@ async def get_weekly_report():
         raise HTTPException(status_code=500, detail=str(e))
 
 # ✅ Historical Data Retrieval Routes
+@app.get("/historical/all_sessions")
+def get_all_sessions(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    from datetime import datetime
+    
+    sessions = db.query(WorkSession, Helmet.helmet_code)\
+                 .join(Helmet, WorkSession.helmet_id == Helmet.id)\
+                 .order_by(WorkSession.start_time.desc()).limit(100).all()
+                 
+    results = []
+    for session, helmet_code in sessions:
+        aggs = db.query(
+            func.avg(Reading.hr).label("avg_hr"),
+            func.max(Reading.temperature).label("max_temp")
+        ).filter(Reading.session_id == session.id).first()
+        
+        fatigue_events = db.query(Reading).filter(Reading.session_id == session.id, Reading.fatigue_state == "Fatigue").count()
+        
+        avg_hr = int(aggs.avg_hr) if aggs.avg_hr else 0
+        peak_temp = round(aggs.max_temp, 1) if aggs.max_temp else 0.0
+        
+        status = "High Risk" if fatigue_events > 0 else "Normal"
+        
+        duration_str = "Active"
+        if session.end_time:
+            delta = session.end_time - session.start_time
+            hours, remainder = divmod(delta.total_seconds(), 3600)
+            minutes, _ = divmod(remainder, 60)
+            duration_str = f"{int(hours)}h {int(minutes)}m"
+        else:
+            delta = datetime.utcnow() - session.start_time
+            hours, remainder = divmod(delta.total_seconds(), 3600)
+            minutes, _ = divmod(remainder, 60)
+            duration_str = f"{int(hours)}h {int(minutes)}m (Active)"
+
+        try:
+             start_time_str = session.start_time.strftime("%m/%d/%Y, %I:%M:%S %p")
+        except:
+             start_time_str = str(session.start_time)
+
+        results.append({
+            "id": f"SESS-{str(session.id).split('-')[0].upper()}",
+            "helmet_id": helmet_code,
+            "start_time": start_time_str,
+            "duration": duration_str,
+            "avg_hr": avg_hr,
+            "peak_temp": peak_temp,
+            "events": fatigue_events,
+            "status": status
+        })
+    return results
+
 @app.get("/historical/sessions/{helmet_code}")
 def get_sessions(helmet_code: str, db: Session = Depends(get_db)):
     helmet = db.query(Helmet).filter(Helmet.helmet_code == helmet_code).first()
